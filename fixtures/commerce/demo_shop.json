@@ -1,0 +1,14 @@
+{
+  "products": [
+    {"external_id":"p1","title":"Ceramic Mug","description":"Daily mug","category_path":["home","kitchen"],"price":"20000","currency":"KRW","cost":"8000","inventory_quantity":30,"status":"active","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-08-01T00:00:00Z"},
+    {"external_id":"p2","title":"Cotton Towel","description":"Soft towel","category_path":["home","bath"],"price":"10000","currency":"KRW","cost":"4000","inventory_quantity":50,"status":"active","created_at":"2026-01-01T00:00:00Z","updated_at":"2026-08-01T00:00:00Z"}
+  ],
+  "orders": [
+    {"external_id":"o1","ordered_at":"2026-08-17T10:00:00Z","currency":"KRW","lines":[{"external_product_id":"p1","quantity":2,"unit_price":"20000","discount_amount":"2000","refund_amount":"0"}]},
+    {"external_id":"o2","ordered_at":"2026-08-18T10:00:00Z","currency":"KRW","lines":[{"external_product_id":"p2","quantity":1,"unit_price":"10000","discount_amount":"0","refund_amount":"0"}]}
+  ],
+  "inventory": [
+    {"external_product_id":"p1","quantity":30,"observed_at":"2026-08-19T00:00:00Z"},
+    {"external_product_id":"p2","quantity":50,"observed_at":"2026-08-19T00:00:00Z"}
+  ]
+}

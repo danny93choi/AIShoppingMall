@@ -1,0 +1,16 @@
+from collections.abc import Sequence
+from typing import Protocol
+from uuid import UUID
+
+from commerce_agent.domain.entities import ProductCandidate, Tenant
+
+
+class TenantRepository(Protocol):
+    async def add(self, tenant: Tenant) -> Tenant: ...
+    async def get_by_id(self, tenant_id: UUID) -> Tenant | None: ...
+
+
+class ProductCandidateRepository(Protocol):
+    async def add(self, tenant_id: UUID, candidate: ProductCandidate) -> ProductCandidate: ...
+    async def get_by_id(self, tenant_id: UUID, candidate_id: UUID) -> ProductCandidate | None: ...
+    async def list(self, tenant_id: UUID) -> Sequence[ProductCandidate]: ...
