@@ -225,6 +225,37 @@ class ToolCallModel(TenantOwnedMixin, AuditMixin, Base):
     error_message: Mapped[str | None] = mapped_column(Text)
 
 
+class OutboxEventModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "outbox_events"
+    __table_args__ = (Index("ix_outbox_tenant_unpublished", "tenant_id", "published_at"),)
+    event_type: Mapped[str] = mapped_column(String(100))
+    aggregate_type: Mapped[str] = mapped_column(String(100))
+    aggregate_id: Mapped[UUID]
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class IdempotencyRecordModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "idempotency_records"
+    __table_args__ = (UniqueConstraint("tenant_id", "route", "key"),)
+    route: Mapped[str] = mapped_column(String(300))
+    key: Mapped[str] = mapped_column(String(300))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    response_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+
+
+class DeadLetterModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "dead_letters"
+    __table_args__ = (Index("ix_dead_letter_tenant_status", "tenant_id", "status"),)
+    operation: Mapped[str] = mapped_column(String(200))
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    error_code: Mapped[str] = mapped_column(String(100))
+    error_message: Mapped[str] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(30))
+
+
 class ShopProductSnapshotModel(TenantOwnedMixin, AuditMixin, Base):
     __tablename__ = "shop_product_snapshots"
     __table_args__ = (

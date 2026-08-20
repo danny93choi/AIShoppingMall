@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 9 — Shopify Commerce Adapter (implementation complete; sandbox verification pending credentials)
+Phase 10 — Security, Observability, and Hardening (complete)
 
 ## Phase Status
 
@@ -122,6 +122,21 @@ Phase 9 — Shopify Commerce Adapter (implementation complete; sandbox verificat
 | P9-06 | Bounded 429/5xx retry handling | PASS |
 | P9-07 | HMAC webhook signature verification | PASS |
 | P9-08 | MockTransport contract suite | PASS |
+
+## Phase 10 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P10-01 | Role/permission RBAC | PASS |
+| P10-02 | SecretStore protocol and secret-safe development store | PASS |
+| P10-03 | Correlation trace context and metrics registry | PASS |
+| P10-04 | Recursive secret, email, and phone redaction | PASS |
+| P10-05 | Bounded retry and dead-letter persistence | PASS |
+| P10-06 | Transactional outbox persistence | PASS |
+| P10-07 | Tenant/route/body-hash idempotency | PASS |
+| P10-08 | Tenant-scoped rate limiter | PASS |
+| P10-09 | Optional PostgreSQL RLS rollout guide | PASS |
+| P10-10 | Backup/restore drill runbook | PASS |
 
 ## Phase 0 Verification
 
@@ -245,3 +260,14 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Webhook HMAC verification: PASS
 - Read-only sandbox smoke command (`make shopify-smoke`): READY
 - Real Shopify sandbox execution: PENDING external shop domain/token
+
+## Phase 10 Verification
+
+- Tenant isolation repository tests: PASS
+- Secret and PII redaction tests: PASS
+- Duplicate request returns stored response; body mismatch conflicts: PASS
+- Failed operation is traceable in dead-letter storage: PASS
+- Outbox events remain unpublished until a publisher handles them: PASS
+- Rate limiting is tenant-scoped and bounded: PASS
+- Restore drill and optional RLS documentation: PASS
+- Ruff, mypy, migration, and focused tests: PASS
