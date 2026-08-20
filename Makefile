@@ -2,7 +2,7 @@ PYTHON ?= python3.12
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: bootstrap lint format typecheck test migrate migrate-down dev down logs demo-discovery
+.PHONY: bootstrap lint format typecheck test migrate migrate-down dev down logs demo-discovery shopify-smoke
 
 bootstrap:
 	@$(PYTHON) -c 'import sys; assert sys.version_info >= (3, 12), "Python 3.12+ is required"'
@@ -47,3 +47,6 @@ logs:
 demo-discovery:
 	docker compose up -d postgres redis
 	docker compose run --build --rm api sh -c "alembic upgrade head && python -m apps.demo_discovery"
+
+shopify-smoke:
+	docker compose run --build --rm api python -m apps.shopify_smoke

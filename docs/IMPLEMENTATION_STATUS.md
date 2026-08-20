@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 8 — Approval and Marketing Draft (complete)
+Phase 9 — Shopify Commerce Adapter (implementation complete; sandbox verification pending credentials)
 
 ## Phase Status
 
@@ -109,6 +109,19 @@ Phase 8 — Approval and Marketing Draft (complete)
 | P8-04 | Deterministic MarketingAgent draft generator | PASS |
 | P8-05 | Claims-to-verify and risk output | PASS |
 | P8-06 | Configurable approval-gated draft and external mutation guard | PASS |
+
+## Phase 9 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P9-01 | Shopify OAuth code exchange and secret-safe credentials | PASS |
+| P9-02 | Connection validation | PASS |
+| P9-03 | GraphQL product read sync | PASS |
+| P9-04 | GraphQL order/sales read sync | PASS |
+| P9-05 | Inventory read sync | PASS |
+| P9-06 | Bounded 429/5xx retry handling | PASS |
+| P9-07 | HMAC webhook signature verification | PASS |
+| P9-08 | MockTransport contract suite | PASS |
 
 ## Phase 0 Verification
 
@@ -223,3 +236,12 @@ The host system Python is 3.9.6, so local non-container commands require install
 - External mutation guard requires approval: PASS
 - Audit events reject ORM update/delete operations: PASS
 - Ruff, mypy, migration, and focused integration test: PASS
+
+## Phase 9 Verification
+
+- Provider credentials are SecretStr and absent from repr/log output: PASS
+- Shopify GraphQL normalized product and inventory contract: PASS
+- Rate-limit retry stops after configured attempts: PASS
+- Webhook HMAC verification: PASS
+- Read-only sandbox smoke command (`make shopify-smoke`): READY
+- Real Shopify sandbox execution: PENDING external shop domain/token

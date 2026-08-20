@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["local", "test", "staging", "production"]
@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(default=2, ge=0, le=5)
     llm_run_budget_usd: float = Field(default=1.0, gt=0)
     allow_marketing_draft_before_approval: bool = False
+    shopify_shop_domain: str | None = None
+    shopify_access_token: SecretStr | None = Field(default=None, repr=False)
+    shopify_api_version: str = "2026-07"
 
 
 @lru_cache
