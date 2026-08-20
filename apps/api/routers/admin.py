@@ -281,8 +281,8 @@ async def admin_overview(
         default=0,
     )
     market_recommendations: list[dict[str, Any]] = []
-    for item in real_candidates_payload:
-        trend = item["trend"]
+    for candidate_payload in real_candidates_payload:
+        trend = candidate_payload["trend"]
         analysis = trend["analysis"]
         monthly_searches = int((trend.get("search_demand") or {}).get("monthly_searches", 0))
         level = (
@@ -322,8 +322,8 @@ async def admin_overview(
             reason = "최근 흐름이 하락하여 즉시 소싱하기에는 근거가 약합니다."
         market_recommendations.append(
             {
-                "candidate_id": item["id"],
-                "name": item["name"],
+                "candidate_id": candidate_payload["id"],
+                "name": candidate_payload["name"],
                 "score": score,
                 "verdict": verdict,
                 "reason": reason,
@@ -333,9 +333,11 @@ async def admin_overview(
                 "missing_evidence": ["실제 판매가격", "경쟁상품 수", "공급원가", "예상 마진"],
             }
         )
-    market_recommendations.sort(key=lambda item: (-item["score"], item["name"]))
-    for rank, item in enumerate(market_recommendations, start=1):
-        item["rank"] = rank
+    market_recommendations.sort(
+        key=lambda recommendation: (-recommendation["score"], recommendation["name"])
+    )
+    for rank, recommendation in enumerate(market_recommendations, start=1):
+        recommendation["rank"] = rank
     return {
         "connections": [
             {
