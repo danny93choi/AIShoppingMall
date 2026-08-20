@@ -21,3 +21,11 @@ All Phase 2 endpoints require `X-Tenant-ID`, `X-Actor-ID`, and optionally `X-Rol
 - `POST /api/v1/integrations/commerce/{id}/sync`: sync products, sales, inventory, and profile
 
 Phase 2 supports only the fixture-backed, read-only `mock` provider.
+
+## Trend ingestion
+
+- `POST /api/v1/trends/mock-ingest`: run both fixture-backed trend sources, persist raw
+  provenance, normalize products, and merge duplicate candidates.
+
+The default Phase 3 fixture emits 100 observations and deterministically merges them into five
+canonical candidates. Repeating the request updates observations without adding candidates.

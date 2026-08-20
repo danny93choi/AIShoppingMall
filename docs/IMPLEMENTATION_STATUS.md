@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 2 — Mock Integrations + Shop Sync (complete)
+Phase 3 — Trend Ingestion + Candidate Normalization (complete)
 
 ## Phase Status
 
@@ -38,7 +38,19 @@ Phase 2 — Mock Integrations + Shop Sync (complete)
 | P2-04 | ShopIntelligenceProfile builder and persistence | PASS |
 | P2-05 | Tenant-scoped integration connect/list/validate/sync API | PASS |
 
-Phase 3 has not been started.
+## Phase 3 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P3-01 | TrendSource protocol and normalized raw DTO | PASS |
+| P3-02 | Fixture-backed MockTrendSource A/B | PASS |
+| P3-03 | Tenant-scoped raw observation persistence | PASS |
+| P3-04 | Text, brand, model, and attribute normalizer | PASS |
+| P3-05 | Versioned taxonomy asset | PASS |
+| P3-06 | Exact key and fuzzy duplicate rules | PASS |
+| P3-07 | Idempotent candidate creation and provenance linkage | PASS |
+
+Phase 4 has not been started.
 
 ## Phase 0 Verification
 
@@ -77,3 +89,17 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Ruff lint: PASS
 - mypy strict mode: PASS, 50 source files
 - pytest: PASS, 13 tests
+
+## Phase 3 Verification
+
+- Two mock sources / 100 raw observations: PASS
+- Intended canonical candidate count (`5`): PASS
+- Same fixture rerun creates zero new candidates: PASS
+- Each candidate links to 20 source observations: PASS
+- Raw title, URL, source ID, metrics, metadata, and timestamp provenance: PASS
+- Variation safety through critical attribute hash: PASS
+- Phase 3 migration upgrade/downgrade/upgrade in isolated DB: PASS
+- Live Compose API first run (`created=5`) and rerun (`created=0`): PASS
+- Ruff lint/format: PASS, 72 files
+- mypy strict mode: PASS, 60 source files
+- pytest: PASS, 19 tests

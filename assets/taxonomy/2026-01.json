@@ -1,0 +1,10 @@
+{
+  "version": "2026-01",
+  "categories": [
+    {"id":"home.kitchen.drinkware","label_ko":"주방 > 음료용품","allowed_attributes":["capacity_ml","material","insulated"]},
+    {"id":"home.bath.towels","label_ko":"욕실 > 타월","allowed_attributes":["material","size"]},
+    {"id":"home.lighting.table_lamps","label_ko":"홈데코 > 조명 > 테이블 램프","allowed_attributes":["power","color"]},
+    {"id":"fashion.bags.crossbody","label_ko":"패션 > 가방 > 크로스백","allowed_attributes":["material","color"]},
+    {"id":"uncategorized","label_ko":"미분류","allowed_attributes":[]}
+  ]
+}

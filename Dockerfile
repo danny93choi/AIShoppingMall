@@ -10,6 +10,7 @@ COPY pyproject.toml README.md ./
 COPY apps ./apps
 COPY src ./src
 COPY fixtures ./fixtures
+COPY assets ./assets
 RUN pip install --upgrade pip && pip install .
 
 RUN useradd --create-home --uid 10001 appuser
