@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 6 — Market, Sourcing, and Shop Fit Agents (complete)
+Phase 7 — End-to-End Discovery Workflow (complete)
 
 ## Phase Status
 
@@ -85,6 +85,19 @@ Phase 6 — Market, Sourcing, and Shop Fit Agents (complete)
 | P6-05 | Strict versioned agent input/output schemas | PASS |
 | P6-06 | Per-agent tool allowlists and side-effect policy | PASS |
 | P6-07 | Conservative confidence and missing-data rules | PASS |
+
+## Phase 7 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P7-01 | Validated discovery workflow state and issue models | PASS |
+| P7-02 | Persistent idempotent Job service with heartbeat | PASS |
+| P7-03 | Shop sync through Top 5 step orchestration | PASS |
+| P7-04 | Recoverable partial-failure handling | PASS |
+| P7-05 | Parallel trend collection and candidate enrichment | PASS |
+| P7-06 | Stable ranking and idempotent recommendation service | PASS |
+| P7-07 | Persistent JSON run summary and score breakdown | PASS |
+| P7-08 | Tenant discovery schedule due-state model | PASS |
 
 ## Phase 0 Verification
 
@@ -175,3 +188,18 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Ruff lint/format: PASS
 - mypy strict mode: PASS, 99 source files
 - pytest: PASS, 55 tests
+
+## Phase 7 Verification
+
+- `make demo-discovery` completes with fixture-only dependencies: PASS
+- Demo tenant, shop sync, 100 observations, and 5 candidates: PASS
+- Market, sourcing, and aggregate shop-fit enrichment: PASS
+- Five deterministic scores and ranked recommendations persisted: PASS
+- JSON output contains Top 5 and per-feature score breakdown: PASS
+- One failed trend source degrades the run to partial without stopping it: PASS
+- Reusing the idempotency key creates no duplicate scores or recommendations: PASS
+- Job progress, heartbeat, completed steps, warnings, errors, and summary persisted: PASS
+- Phase 7 migration downgrade/upgrade: PASS
+- Ruff lint/format: PASS
+- mypy strict mode: PASS, 106 source files
+- pytest: PASS, 57 tests

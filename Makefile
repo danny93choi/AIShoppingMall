@@ -2,7 +2,7 @@ PYTHON ?= python3.12
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: bootstrap lint format typecheck test migrate migrate-down dev down logs
+.PHONY: bootstrap lint format typecheck test migrate migrate-down dev down logs demo-discovery
 
 bootstrap:
 	@$(PYTHON) -c 'import sys; assert sys.version_info >= (3, 12), "Python 3.12+ is required"'
@@ -43,3 +43,7 @@ down:
 
 logs:
 	docker compose logs --follow api worker
+
+demo-discovery:
+	docker compose up -d postgres redis
+	docker compose run --build --rm api sh -c "alembic upgrade head && python -m apps.demo_discovery"

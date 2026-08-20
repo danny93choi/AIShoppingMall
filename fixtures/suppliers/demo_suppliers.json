@@ -1,0 +1,9 @@
+{
+  "suppliers": [
+    {"brand":"Acme","source_id":"supplier-acme","supplier_name":"Demo Supply A","unit_cost":"9000","currency":"KRW","moq":20,"lead_time_days":7},
+    {"brand":"Mori","source_id":"supplier-mori","supplier_name":"Demo Supply B","unit_cost":"5500","currency":"KRW","moq":24,"lead_time_days":8},
+    {"brand":"Luma","source_id":"supplier-luma","supplier_name":"Demo Supply C","unit_cost":"4000","currency":"KRW","moq":30,"lead_time_days":6},
+    {"brand":"Novi","source_id":"supplier-novi","supplier_name":"Demo Supply D","unit_cost":"15000","currency":"KRW","moq":12,"lead_time_days":10},
+    {"brand":"Pico","source_id":"supplier-pico","supplier_name":"Demo Supply E","unit_cost":"13000","currency":"KRW","moq":15,"lead_time_days":9}
+  ]
+}
