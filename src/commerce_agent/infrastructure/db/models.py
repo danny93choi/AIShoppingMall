@@ -256,6 +256,34 @@ class DeadLetterModel(TenantOwnedMixin, AuditMixin, Base):
     status: Mapped[str] = mapped_column(String(30))
 
 
+class FeatureFlagModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "feature_flags"
+    __table_args__ = (UniqueConstraint("tenant_id", "key"),)
+    key: Mapped[str] = mapped_column(String(100))
+    enabled: Mapped[bool]
+    configuration_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+
+
+class TenantPilotConfigModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "tenant_pilot_configs"
+    __table_args__ = (UniqueConstraint("tenant_id"),)
+    onboarding_status: Mapped[str] = mapped_column(String(30))
+    scoring_preset: Mapped[str] = mapped_column(String(100))
+    discovery_categories: Mapped[list[str]] = mapped_column(JSONB)
+    max_daily_candidates: Mapped[int] = mapped_column(Integer)
+    retention_days: Mapped[int] = mapped_column(Integer)
+
+
+class PilotFeedbackModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "pilot_feedback"
+    __table_args__ = (Index("ix_feedback_tenant_created", "tenant_id", "created_at"),)
+    actor_id: Mapped[UUID]
+    recommendation_id: Mapped[UUID | None]
+    rating: Mapped[int]
+    category: Mapped[str] = mapped_column(String(100))
+    comment: Mapped[str | None] = mapped_column(Text)
+
+
 class ShopProductSnapshotModel(TenantOwnedMixin, AuditMixin, Base):
     __tablename__ = "shop_product_snapshots"
     __table_args__ = (

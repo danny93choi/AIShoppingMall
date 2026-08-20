@@ -31,6 +31,21 @@ API가 제공됩니다. API 계약은 `docs/API.md`를 참고하세요.
 Phase 3에서는 `/api/v1/trends/mock-ingest`로 100개의 fixture trend observation을 수집하고,
 정규화 및 중복 제거를 거쳐 다섯 개 canonical candidate로 병합할 수 있습니다.
 
+## NAVER 실제 쇼핑 트렌드
+
+NAVER Cloud Platform의 NAVER API HUB에서 발급한 인증 정보를 `.env`에 설정하면 관리자
+화면에서 쇼핑인사이트의 실제 한국 쇼핑 클릭 추이를 조사할 수 있습니다.
+
+```env
+NAVER_API_HUB_CLIENT_ID=
+NAVER_API_HUB_CLIENT_SECRET=
+```
+
+연결만 확인하는 읽기 전용 smoke test는 `make naver-trend-smoke`로 실행합니다. 관리자 화면
+`http://localhost:8000/admin`에서는 쇼핑 분야와 키워드 최대 5개를 선택한 뒤 `한국 트렌드
+조사`를 누릅니다. `NAVER REAL` 표시는 API HUB에서 수집한 실제 데이터라는 의미입니다.
+트렌드 지수는 절대 검색량이 아닌 선택 기간 내 상대적 클릭 비율입니다.
+
 ## 구조와 의존성
 
 이 저장소는 API와 worker를 함께 배포 가능한 modular monolith로 유지합니다.

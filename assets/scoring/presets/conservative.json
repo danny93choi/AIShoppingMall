@@ -1,0 +1,1 @@
+{"name":"conservative","description":"Higher confidence and margin emphasis for low-risk pilots","minimum_confidence":70,"minimum_margin_rate":"0.20","weights":{"trend":"0.10","demand":"0.15","competition":"0.10","margin":"0.25","supply":"0.15","shop_fit":"0.15","confidence":"0.10"}}

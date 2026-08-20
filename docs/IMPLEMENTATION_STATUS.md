@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 11 — Minimal Admin UI (complete)
+Phase 12 — Pilot Readiness (complete)
 
 ## Phase Status
 
@@ -150,6 +150,33 @@ Phase 11 — Minimal Admin UI (complete)
 | P11-06 | Job and agent run diagnostics | PASS |
 | P11-07 | Commerce integration status | PASS |
 
+## Phase 12 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P12-01 | Tenant feature flags with safe defaults | PASS |
+| P12-02 | Typed tenant onboarding | PASS |
+| P12-03 | Conservative and growth scoring presets | PASS |
+| P12-04 | Dead-letter support/admin endpoint | PASS |
+
+## Phase 13: NAVER Korea Trend Integration
+
+| Item | Status |
+|---|---|
+| NAVER API HUB Shopping Insight adapter | PASS |
+| Secret-safe credential configuration | PASS |
+| Read-only live API smoke test | PASS |
+| Admin category/keyword trend controls | PASS |
+| Real-data provenance and weekly trend display | PASS |
+
+Live verification on 2026-08-20 returned five keyword series from NAVER API HUB. The admin
+workflow displayed `NAVER REAL` provenance and completed with five observations. Incomplete
+current-week data is excluded from week-over-week calculations.
+| P12-05 | Tenant cost and pilot KPI dashboard API | PASS |
+| P12-06 | Data retention policy | PASS |
+| P12-07 | Terms/compliance checklist | PASS |
+| P12-08 | Tenant-scoped pilot feedback capture | PASS |
+
 ## Phase 0 Verification
 
 - Python runtime: 3.12.14 (container)
@@ -292,3 +319,14 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Discovery, approve/reject, and draft actions are wired to APIs: PASS
 - Marketing draft route precedence regression fixed: PASS
 - Ruff, mypy, and focused integration tests: PASS
+
+## Phase 12 Verification
+
+- Onboarding creates four safe-default feature flags: PASS
+- External mutations and Shopify webhooks default disabled: PASS
+- Scoring presets have weights summing to one: PASS
+- Feedback rating validation and persistence: PASS
+- Cost per run, workflow success, approval, and feedback metrics: PASS
+- Tenant-scoped dead-letter support view: PASS
+- Retention, compliance, and pilot operations documents: PASS
+- Ruff, mypy, migration, focused test, and final full regression suite: PASS

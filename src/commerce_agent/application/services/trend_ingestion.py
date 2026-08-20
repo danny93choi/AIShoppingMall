@@ -119,6 +119,7 @@ class TrendIngestionService:
                 else:
                     observation.candidate_id = candidate.id
                     observation.observed_metrics = item.observed_metrics
+                    observation.raw_metadata = item.metadata
                     observation.observed_at = item.observed_at
                     observation.updated_at = now
                 linked_candidate_ids.append(candidate.id)

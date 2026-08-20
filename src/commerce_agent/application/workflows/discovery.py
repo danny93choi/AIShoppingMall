@@ -79,6 +79,7 @@ class DiscoveryWorkflow:
         idempotency_key: str,
         max_candidates: int = 50,
         top_n: int = 5,
+        trend_query: TrendQuery | None = None,
     ) -> DiscoveryRunSummary:
         correlation_id = uuid4()
         job = await self._jobs.create_or_restart(
@@ -98,7 +99,8 @@ class DiscoveryWorkflow:
         state.completed_steps.append("shop_sync")
 
         await self._checkpoint(state, "trend_sources", 15)
-        collected = await self._collect_sources(state, categories, max_candidates)
+        query = trend_query or TrendQuery(categories=categories, max_results=max_candidates)
+        collected = await self._collect_sources(state, query)
         if not collected:
             return await self._fail(
                 state, "trend_sources", "NO_TREND_SOURCES", "all sources failed"
@@ -106,14 +108,16 @@ class DiscoveryWorkflow:
         ingestion = await TrendIngestionService(self._session).ingest(
             tenant_id,
             collected,
-            TrendQuery(categories=categories, max_results=max_candidates),
+            query,
         )
         state.completed_steps.extend(["trend_sources", "candidate_normalization"])
+        current_candidate_ids = [UUID(value) for value in ingestion.observations_by_candidate]
         observations = list(
             (
                 await self._session.scalars(
                     select(RawTrendObservationModel).where(
-                        RawTrendObservationModel.tenant_id == tenant_id
+                        RawTrendObservationModel.tenant_id == tenant_id,
+                        RawTrendObservationModel.candidate_id.in_(current_candidate_ids),
                     )
                 )
             ).all()
@@ -123,7 +127,10 @@ class DiscoveryWorkflow:
             (
                 await self._session.scalars(
                     select(ProductCandidateModel)
-                    .where(ProductCandidateModel.tenant_id == tenant_id)
+                    .where(
+                        ProductCandidateModel.tenant_id == tenant_id,
+                        ProductCandidateModel.id.in_(current_candidate_ids),
+                    )
                     .order_by(ProductCandidateModel.canonical_name)
                     .limit(max_candidates)
                 )
@@ -187,9 +194,8 @@ class DiscoveryWorkflow:
         return summary
 
     async def _collect_sources(
-        self, state: DiscoveryWorkflowState, categories: list[str], max_results: int
+        self, state: DiscoveryWorkflowState, query: TrendQuery
     ) -> list[TrendSource]:
-        query = TrendQuery(categories=categories, max_results=max_results)
         discovered = await asyncio.gather(
             *(source.discover(query) for source in self._trend_sources), return_exceptions=True
         )

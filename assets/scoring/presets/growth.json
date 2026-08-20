@@ -1,0 +1,1 @@
+{"name":"growth","description":"Trend and demand emphasis for controlled exploration","minimum_confidence":50,"minimum_margin_rate":"0.10","weights":{"trend":"0.25","demand":"0.20","competition":"0.10","margin":"0.10","supply":"0.10","shop_fit":"0.20","confidence":"0.05"}}
