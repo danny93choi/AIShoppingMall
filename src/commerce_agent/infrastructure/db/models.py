@@ -140,6 +140,10 @@ class JobModel(TenantOwnedMixin, AuditMixin, Base):
 
 class AgentRunModel(TenantOwnedMixin, AuditMixin, Base):
     __tablename__ = "agent_runs"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "id", name="uq_agent_run_tenant_id"),
+        Index("ix_agent_run_tenant_correlation", "tenant_id", "correlation_id"),
+    )
     agent_name: Mapped[str] = mapped_column(String(100))
     agent_version: Mapped[str] = mapped_column(String(50))
     workflow_name: Mapped[str] = mapped_column(String(100))
@@ -147,7 +151,35 @@ class AgentRunModel(TenantOwnedMixin, AuditMixin, Base):
     status: Mapped[str] = mapped_column(String(30))
     input_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
     output_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    prompt_name: Mapped[str | None] = mapped_column(String(200))
     prompt_version: Mapped[str | None] = mapped_column(String(100))
+    prompt_hash: Mapped[str | None] = mapped_column(String(64))
+    model_provider: Mapped[str | None] = mapped_column(String(50))
+    model_name: Mapped[str | None] = mapped_column(String(100))
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    estimated_cost: Mapped[Decimal] = mapped_column(Numeric(12, 6), default=Decimal("0"))
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_code: Mapped[str | None] = mapped_column(String(100))
+    error_message: Mapped[str | None] = mapped_column(Text)
+
+
+class ToolCallModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "tool_calls"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["tenant_id", "agent_run_id"], ["agent_runs.tenant_id", "agent_runs.id"]
+        ),
+        Index("ix_tool_call_tenant_run", "tenant_id", "agent_run_id"),
+    )
+    agent_run_id: Mapped[UUID]
+    tool_name: Mapped[str] = mapped_column(String(200))
+    arguments_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    result_summary_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(String(30))
+    latency_ms: Mapped[int | None] = mapped_column(Integer)
+    error_message: Mapped[str | None] = mapped_column(Text)
 
 
 class ShopProductSnapshotModel(TenantOwnedMixin, AuditMixin, Base):
