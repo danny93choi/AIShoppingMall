@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 3 — Trend Ingestion + Candidate Normalization (complete)
+Phase 4 — Deterministic Scoring Foundation (complete)
 
 ## Phase Status
 
@@ -50,7 +50,16 @@ Phase 3 — Trend Ingestion + Candidate Normalization (complete)
 | P3-06 | Exact key and fuzzy duplicate rules | PASS |
 | P3-07 | Idempotent candidate creation and provenance linkage | PASS |
 
-Phase 4 has not been started.
+## Phase 4 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P4-01 | Validated feature models | PASS |
+| P4-02 | Deterministic 0–100 normalizers | PASS |
+| P4-03 | Landed cost and contribution-margin model | PASS |
+| P4-04 | Hard-reject rule evaluator | PASS |
+| P4-05 | Weighted OpportunityScoreCalculator | PASS |
+| P4-06 | Versioned JSON scoring configuration | PASS |
 
 ## Phase 0 Verification
 
@@ -103,3 +112,15 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Ruff lint/format: PASS, 72 files
 - mypy strict mode: PASS, 60 source files
 - pytest: PASS, 19 tests
+
+## Phase 4 Verification
+
+- Score calculation requires no LLM or network call: PASS
+- Identical inputs produce identical scores: PASS
+- Invalid weight total is rejected during config validation: PASS
+- Decimal-based landed cost and contribution margin calculations: PASS
+- Piecewise margin-score interpolation and threshold boundaries: PASS
+- Hard-reject rules and multiple-reason reporting: PASS
+- Ruff lint/format: PASS, 62 files formatted
+- mypy strict mode: PASS, 74 source files
+- pytest: PASS, 36 tests

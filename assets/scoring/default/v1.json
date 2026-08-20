@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "weights": {
+    "trend": "0.20",
+    "demand": "0.15",
+    "competition": "0.15",
+    "margin": "0.15",
+    "supply": "0.10",
+    "shop_fit": "0.20",
+    "confidence": "0.05"
+  },
+  "margin_score_points": [
+    {"margin_rate":"0.05","score":"0"},
+    {"margin_rate":"0.10","score":"25"},
+    {"margin_rate":"0.20","score":"60"},
+    {"margin_rate":"0.30","score":"85"},
+    {"margin_rate":"0.40","score":"100"}
+  ],
+  "hard_reject": {
+    "minimum_margin_rate": "0.05",
+    "minimum_confidence_score": "30",
+    "require_supplier": true,
+    "restricted_categories": [],
+    "maximum_price_premium_rate": "0.30"
+  }
+}
