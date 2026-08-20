@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 5 — LLM/Agent Foundation (complete)
+Phase 6 — Market, Sourcing, and Shop Fit Agents (complete)
 
 ## Phase Status
 
@@ -73,6 +73,18 @@ Phase 5 — LLM/Agent Foundation (complete)
 | P5-06 | AgentRun and ToolCall persistence | PASS |
 | P5-07 | Per-run cost budget guard | PASS |
 | P5-08 | Deterministic FakeLLMClient | PASS |
+
+## Phase 6 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P6-01 | Taxonomy-constrained CategorizerAgent | PASS |
+| P6-02 | Evidence-grounded MarketAnalystAgent | PASS |
+| P6-03 | Source-required SourcingAgent | PASS |
+| P6-04 | Aggregate-only ShopFitAgent | PASS |
+| P6-05 | Strict versioned agent input/output schemas | PASS |
+| P6-06 | Per-agent tool allowlists and side-effect policy | PASS |
+| P6-07 | Conservative confidence and missing-data rules | PASS |
 
 ## Phase 0 Verification
 
@@ -149,3 +161,17 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Ruff lint/format: PASS
 - mypy strict mode: PASS, 91 source files
 - pytest: PASS, 44 tests
+
+## Phase 6 Verification
+
+- All four specialist outputs pass strict Pydantic schema validation: PASS
+- Facts require source IDs and inferences require known fact IDs: PASS
+- Unsupported-claim evaluation detects unavailable sources: PASS
+- Supplier output without an available supplier source is rejected: PASS
+- Categorizer output is limited to the supplied taxonomy: PASS
+- Confidence is capped when facts or required data are missing: PASS
+- Shop profile accepts aggregate fields only and rejects PII fields: PASS
+- Per-agent tool allowlists reject unknown or unapproved mutation tools: PASS
+- Ruff lint/format: PASS
+- mypy strict mode: PASS, 99 source files
+- pytest: PASS, 55 tests
