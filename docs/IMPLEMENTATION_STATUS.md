@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 4 — Deterministic Scoring Foundation (complete)
+Phase 5 — LLM/Agent Foundation (complete)
 
 ## Phase Status
 
@@ -60,6 +60,19 @@ Phase 4 — Deterministic Scoring Foundation (complete)
 | P4-04 | Hard-reject rule evaluator | PASS |
 | P4-05 | Weighted OpportunityScoreCalculator | PASS |
 | P4-06 | Versioned JSON scoring configuration | PASS |
+
+## Phase 5 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P5-01 | Provider-independent LLMClient protocol | PASS |
+| P5-02 | OpenAI Responses API implementation | PASS |
+| P5-03 | Pydantic structured-output validation and repair | PASS |
+| P5-04 | File-based versioned prompt registry with content hashes | PASS |
+| P5-05 | AgentRunner | PASS |
+| P5-06 | AgentRun and ToolCall persistence | PASS |
+| P5-07 | Per-run cost budget guard | PASS |
+| P5-08 | Deterministic FakeLLMClient | PASS |
 
 ## Phase 0 Verification
 
@@ -124,3 +137,15 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Ruff lint/format: PASS, 62 files formatted
 - mypy strict mode: PASS, 74 source files
 - pytest: PASS, 36 tests
+
+## Phase 5 Verification
+
+- Agent tests run without an API key or real provider: PASS
+- Malformed structured output repaired with bounded retries: PASS
+- Prompt name, version, and SHA-256 hash recorded: PASS
+- Provider, model, token usage, estimated cost, latency, and errors recorded: PASS
+- Cost budget exceed produces an explicit failure and preserves consumed usage: PASS
+- AgentRun and tenant-scoped ToolCall database persistence: PASS
+- Ruff lint/format: PASS
+- mypy strict mode: PASS, 91 source files
+- pytest: PASS, 44 tests

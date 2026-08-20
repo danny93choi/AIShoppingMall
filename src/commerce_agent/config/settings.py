@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://commerce:commerce_dev_only@postgres:5432/commerce"
     redis_url: str = "redis://redis:6379/0"
     readiness_timeout_seconds: float = Field(default=2.0, gt=0, le=30)
+    openai_api_key: str | None = Field(default=None, repr=False)
+    llm_default_model: str = "gpt-5.6-sol"
+    llm_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
+    llm_max_retries: int = Field(default=2, ge=0, le=5)
+    llm_run_budget_usd: float = Field(default=1.0, gt=0)
 
 
 @lru_cache
