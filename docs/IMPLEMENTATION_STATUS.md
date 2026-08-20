@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 7 — End-to-End Discovery Workflow (complete)
+Phase 10 — Security, Observability, and Hardening (complete)
 
 ## Phase Status
 
@@ -98,6 +98,45 @@ Phase 7 — End-to-End Discovery Workflow (complete)
 | P7-06 | Stable ranking and idempotent recommendation service | PASS |
 | P7-07 | Persistent JSON run summary and score breakdown | PASS |
 | P7-08 | Tenant discovery schedule due-state model | PASS |
+
+## Phase 8 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P8-01 | Approval decision domain and pending-only transitions | PASS |
+| P8-02 | Tenant-scoped approve/reject/defer API | PASS |
+| P8-03 | Immutable append-only audit events | PASS |
+| P8-04 | Deterministic MarketingAgent draft generator | PASS |
+| P8-05 | Claims-to-verify and risk output | PASS |
+| P8-06 | Configurable approval-gated draft and external mutation guard | PASS |
+
+## Phase 9 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P9-01 | Shopify OAuth code exchange and secret-safe credentials | PASS |
+| P9-02 | Connection validation | PASS |
+| P9-03 | GraphQL product read sync | PASS |
+| P9-04 | GraphQL order/sales read sync | PASS |
+| P9-05 | Inventory read sync | PASS |
+| P9-06 | Bounded 429/5xx retry handling | PASS |
+| P9-07 | HMAC webhook signature verification | PASS |
+| P9-08 | MockTransport contract suite | PASS |
+
+## Phase 10 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P10-01 | Role/permission RBAC | PASS |
+| P10-02 | SecretStore protocol and secret-safe development store | PASS |
+| P10-03 | Correlation trace context and metrics registry | PASS |
+| P10-04 | Recursive secret, email, and phone redaction | PASS |
+| P10-05 | Bounded retry and dead-letter persistence | PASS |
+| P10-06 | Transactional outbox persistence | PASS |
+| P10-07 | Tenant/route/body-hash idempotency | PASS |
+| P10-08 | Tenant-scoped rate limiter | PASS |
+| P10-09 | Optional PostgreSQL RLS rollout guide | PASS |
+| P10-10 | Backup/restore drill runbook | PASS |
 
 ## Phase 0 Verification
 
@@ -203,3 +242,32 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Ruff lint/format: PASS
 - mypy strict mode: PASS, 106 source files
 - pytest: PASS, 57 tests
+
+## Phase 8 Verification
+
+- Only pending recommendations can be decided: PASS
+- Marketing draft is blocked before approval by default: PASS
+- Draft output includes claims-to-verify and risks: PASS
+- External mutation guard requires approval: PASS
+- Audit events reject ORM update/delete operations: PASS
+- Ruff, mypy, migration, and focused integration test: PASS
+
+## Phase 9 Verification
+
+- Provider credentials are SecretStr and absent from repr/log output: PASS
+- Shopify GraphQL normalized product and inventory contract: PASS
+- Rate-limit retry stops after configured attempts: PASS
+- Webhook HMAC verification: PASS
+- Read-only sandbox smoke command (`make shopify-smoke`): READY
+- Real Shopify sandbox execution: PENDING external shop domain/token
+
+## Phase 10 Verification
+
+- Tenant isolation repository tests: PASS
+- Secret and PII redaction tests: PASS
+- Duplicate request returns stored response; body mismatch conflicts: PASS
+- Failed operation is traceable in dead-letter storage: PASS
+- Outbox events remain unpublished until a publisher handles them: PASS
+- Rate limiting is tenant-scoped and bounded: PASS
+- Restore drill and optional RLS documentation: PASS
+- Ruff, mypy, migration, and focused tests: PASS

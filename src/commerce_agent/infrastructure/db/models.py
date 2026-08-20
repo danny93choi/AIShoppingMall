@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    event,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -133,6 +134,35 @@ class ApprovalModel(TenantOwnedMixin, AuditMixin, Base):
     decision_note: Mapped[str | None] = mapped_column(Text)
 
 
+class AuditEventModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "audit_events"
+    __table_args__ = (
+        Index("ix_audit_tenant_resource", "tenant_id", "resource_type", "resource_id"),
+    )
+    event_type: Mapped[str] = mapped_column(String(100))
+    resource_type: Mapped[str] = mapped_column(String(100))
+    resource_id: Mapped[UUID]
+    actor_id: Mapped[UUID]
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+
+
+class MarketingDraftModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "marketing_drafts"
+    __table_args__ = (UniqueConstraint("tenant_id", "recommendation_id"),)
+    recommendation_id: Mapped[UUID]
+    schema_version: Mapped[str] = mapped_column(String(20))
+    content_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    claims_to_verify: Mapped[list[str]] = mapped_column(JSONB)
+    risks_json: Mapped[list[str]] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(String(30))
+
+
+@event.listens_for(AuditEventModel, "before_update")
+@event.listens_for(AuditEventModel, "before_delete")
+def _prevent_audit_mutation(*_args: Any) -> None:
+    raise ValueError("audit events are immutable")
+
+
 class JobModel(TenantOwnedMixin, AuditMixin, Base):
     __tablename__ = "jobs"
     __table_args__ = (UniqueConstraint("tenant_id", "idempotency_key"),)
@@ -193,6 +223,37 @@ class ToolCallModel(TenantOwnedMixin, AuditMixin, Base):
     status: Mapped[str] = mapped_column(String(30))
     latency_ms: Mapped[int | None] = mapped_column(Integer)
     error_message: Mapped[str | None] = mapped_column(Text)
+
+
+class OutboxEventModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "outbox_events"
+    __table_args__ = (Index("ix_outbox_tenant_unpublished", "tenant_id", "published_at"),)
+    event_type: Mapped[str] = mapped_column(String(100))
+    aggregate_type: Mapped[str] = mapped_column(String(100))
+    aggregate_id: Mapped[UUID]
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    attempt_count: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class IdempotencyRecordModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "idempotency_records"
+    __table_args__ = (UniqueConstraint("tenant_id", "route", "key"),)
+    route: Mapped[str] = mapped_column(String(300))
+    key: Mapped[str] = mapped_column(String(300))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    response_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+
+
+class DeadLetterModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "dead_letters"
+    __table_args__ = (Index("ix_dead_letter_tenant_status", "tenant_id", "status"),)
+    operation: Mapped[str] = mapped_column(String(200))
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    error_code: Mapped[str] = mapped_column(String(100))
+    error_message: Mapped[str] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String(30))
 
 
 class ShopProductSnapshotModel(TenantOwnedMixin, AuditMixin, Base):
