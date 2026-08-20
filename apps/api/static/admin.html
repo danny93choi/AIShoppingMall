@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI Commerce Control Room</title>
+  <style>
+    :root{--ink:#17211b;--muted:#66736b;--paper:#f5f3ec;--card:#fffdf7;--line:#d8d8cd;--accent:#176b4d;--warn:#c76b27;--bad:#ad3d3d}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,sans-serif}
+    header{padding:28px max(24px,5vw);background:#163d2e;color:white;display:flex;gap:24px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+    h1{margin:0;font:700 28px/1.1 Georgia,serif}.sub{opacity:.75;margin-top:6px}.auth{display:flex;gap:8px;flex-wrap:wrap}
+    input,button{border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:white}input{width:220px}button{cursor:pointer;font-weight:700}.primary{background:#d9f26a;border-color:#d9f26a;color:#173221}
+    main{padding:28px max(24px,5vw) 60px}.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:22px}.status{color:var(--muted)}
+    .metrics{display:grid;grid-template-columns:repeat(4,minmax(130px,1fr));gap:14px;margin-bottom:24px}.metric,.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 4px 20px #1d33220a}.metric{padding:18px}.metric b{font-size:27px;display:block}.metric span{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}.panel{padding:20px;overflow:auto}.panel h2{font:700 20px Georgia,serif;margin:0 0 15px}table{border-collapse:collapse;width:100%;min-width:620px}th,td{text-align:left;padding:11px;border-bottom:1px solid #e7e5dc;vertical-align:top}th{font-size:12px;text-transform:uppercase;color:var(--muted)}
+    .badge{display:inline-block;border-radius:999px;padding:3px 8px;background:#e5ece7;font-size:12px}.pending{background:#fff0c9}.approved,.succeeded{background:#d7f1dc}.rejected,.failed{background:#f8d8d8}.actions{display:flex;gap:5px}.actions button{padding:5px 8px;font-size:12px}.score{font:700 20px Georgia,serif}.breakdown{font-size:12px;color:var(--muted);max-width:260px}.stack{display:grid;gap:10px}.item{padding:12px;border:1px solid #e4e2d8;border-radius:10px}.item strong{display:block}.error{color:var(--bad)}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+<header><div><h1>AI Commerce Control Room</h1><div class="sub">상품 발견부터 승인, 실행 추적까지</div></div><div class="auth"><input id="tenant" placeholder="Tenant UUID"><input id="actor" placeholder="Actor UUID"><input id="roles" value="owner" placeholder="Roles"><button onclick="connect()">연결</button></div></header>
+<main><div class="toolbar"><button class="primary" onclick="discover()">새 Discovery 실행</button><button onclick="load()">새로고침</button><span class="status" id="status">Tenant 정보를 입력하세요.</span></div>
+<section class="metrics" id="metrics"></section>
+<div class="grid"><section class="panel"><h2>Top Recommendations</h2><div id="recommendations"></div></section><section class="panel"><h2>Integrations</h2><div class="stack" id="connections"></div><h2 style="margin-top:26px">Runs</h2><div class="stack" id="jobs"></div></section><section class="panel"><h2>Candidates</h2><div id="candidates"></div></section><section class="panel"><h2>Marketing Drafts</h2><div class="stack" id="drafts"></div><h2 style="margin-top:26px">Agent Runs</h2><div class="stack" id="agents"></div></section></div></main>
+<script>
+const $=id=>document.getElementById(id);let data={};
+function headers(){return {'Content-Type':'application/json','X-Tenant-ID':$('tenant').value,'X-Actor-ID':$('actor').value,'X-Roles':$('roles').value}}
+function connect(){localStorage.aiTenant=$('tenant').value;localStorage.aiActor=$('actor').value;localStorage.aiRoles=$('roles').value;load()}
+async function api(url,opts={}){let r=await fetch(url,{...opts,headers:{...headers(),...(opts.headers||{})}});if(!r.ok)throw new Error((await r.json()).detail||r.statusText);return r.json()}
+async function load(){try{$('status').textContent='불러오는 중…';data=await api('/api/v1/admin/overview');render();$('status').textContent='마지막 갱신 '+new Date().toLocaleTimeString()}catch(e){$('status').textContent=e.message}}
+async function discover(){try{$('status').textContent='Discovery 실행 중…';await api('/api/v1/admin/discovery',{method:'POST'});await load()}catch(e){$('status').textContent=e.message}}
+async function decide(id,verb){try{await api(`/api/v1/recommendations/${id}/${verb}`,{method:'POST',body:'{}'});await load()}catch(e){alert(e.message)}}
+async function draft(id){try{await api(`/api/v1/recommendations/${id}/marketing-draft`,{method:'POST'});await load()}catch(e){alert(e.message)}}
+const badge=s=>`<span class="badge ${s}">${s}</span>`;
+function render(){let r=data.recommendations||[],c=data.candidates||[],j=data.jobs||[],d=data.marketing_drafts||[];$('metrics').innerHTML=[['Candidates',c.length],['Recommendations',r.length],['Pending',r.filter(x=>x.status==='pending').length],['Drafts',d.length]].map(x=>`<div class="metric"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+$('recommendations').innerHTML=`<table><tr><th>Rank</th><th>Product</th><th>Score</th><th>Evidence</th><th>Decision</th></tr>${r.map(x=>`<tr><td>#${x.rank}</td><td><strong>${x.candidate_name}</strong><br>${badge(x.status)}</td><td class="score">${x.score||'-'}</td><td class="breakdown">${Object.entries(x.breakdown||{}).map(([k,v])=>`${k} ${v}`).join(' · ')}</td><td><div class="actions">${x.status==='pending'?`<button onclick="decide('${x.id}','approve')">승인</button><button onclick="decide('${x.id}','reject')">거절</button>`:''}${x.status==='approved'?`<button onclick="draft('${x.id}')">초안</button>`:''}</div></td></tr>`).join('')}</table>`;
+$('candidates').innerHTML=`<table><tr><th>Product</th><th>Category</th><th>Sources</th><th>Status</th></tr>${c.map(x=>`<tr><td>${x.name}</td><td>${x.category}</td><td>${x.source_count}</td><td>${badge(x.status)}</td></tr>`).join('')}</table>`;
+$('connections').innerHTML=(data.connections||[]).map(x=>`<div class="item"><strong>${x.name}</strong>${x.provider} · ${badge(x.status)}</div>`).join('')||'<div class="item">연결 없음</div>';
+$('jobs').innerHTML=j.map(x=>`<div class="item"><strong>${badge(x.status)} ${x.progress}%</strong>${x.step||'완료'}${x.errors.length?`<div class="error">오류 ${x.errors.length}</div>`:''}</div>`).join('')||'<div class="item">실행 기록 없음</div>';
+$('drafts').innerHTML=d.map(x=>`<div class="item"><strong>${x.content.positioning||'Marketing draft'}</strong>검증 필요: ${x.claims_to_verify.join(', ')}</div>`).join('')||'<div class="item">초안 없음</div>';
+$('agents').innerHTML=(data.agent_runs||[]).map(x=>`<div class="item"><strong>${x.agent} ${badge(x.status)}</strong>${x.model||'offline'} · $${x.cost}${x.error?`<div class="error">${x.error}</div>`:''}</div>`).join('')||'<div class="item">Agent 실행 기록 없음</div>'}
+$('tenant').value=localStorage.aiTenant||'';$('actor').value=localStorage.aiActor||'';$('roles').value=localStorage.aiRoles||'owner';if($('tenant').value&&$('actor').value)load();
+</script></body></html>

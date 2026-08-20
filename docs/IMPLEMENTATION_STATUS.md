@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 10 — Security, Observability, and Hardening (complete)
+Phase 11 — Minimal Admin UI (complete)
 
 ## Phase Status
 
@@ -137,6 +137,18 @@ Phase 10 — Security, Observability, and Hardening (complete)
 | P10-08 | Tenant-scoped rate limiter | PASS |
 | P10-09 | Optional PostgreSQL RLS rollout guide | PASS |
 | P10-10 | Backup/restore drill runbook | PASS |
+
+## Phase 11 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P11-01 | Tenant/actor/role auth shell | PASS |
+| P11-02 | Summary dashboard | PASS |
+| P11-03 | Candidate list and evidence overview | PASS |
+| P11-04 | Ranked recommendation queue | PASS |
+| P11-05 | Approve/reject and marketing draft actions | PASS |
+| P11-06 | Job and agent run diagnostics | PASS |
+| P11-07 | Commerce integration status | PASS |
 
 ## Phase 0 Verification
 
@@ -271,3 +283,12 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Rate limiting is tenant-scoped and bounded: PASS
 - Restore drill and optional RLS documentation: PASS
 - Ruff, mypy, migration, and focused tests: PASS
+
+## Phase 11 Verification
+
+- Admin shell renders all required operator surfaces: PASS
+- Browser visual inspection at desktop viewport: PASS
+- Dashboard reads tenant-scoped connections, candidates, scores, recommendations, jobs, agents, and drafts: PASS
+- Discovery, approve/reject, and draft actions are wired to APIs: PASS
+- Marketing draft route precedence regression fixed: PASS
+- Ruff, mypy, and focused integration tests: PASS

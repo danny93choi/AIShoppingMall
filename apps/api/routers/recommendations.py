@@ -25,6 +25,26 @@ def _require_operator(context: TenantContext) -> None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="operator role required")
 
 
+@router.post("/recommendations/{recommendation_id}/marketing-draft")
+async def create_marketing_draft(
+    recommendation_id: UUID,
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+) -> dict[str, Any]:
+    _require_operator(context)
+    try:
+        draft = await ApprovalService(session).create_marketing_draft(
+            tenant_id=context.tenant_id,
+            actor_id=context.actor_id,
+            recommendation_id=recommendation_id,
+            allow_before_approval=settings.allow_marketing_draft_before_approval,
+        )
+    except (ValueError, PermissionError) as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    return {"id": draft.id, "status": draft.status, "claims_to_verify": draft.claims_to_verify}
+
+
 @router.post("/recommendations/{recommendation_id}/{decision}")
 async def decide_recommendation(
     recommendation_id: UUID,
@@ -48,26 +68,6 @@ async def decide_recommendation(
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     return {"id": recommendation.id, "status": recommendation.status}
-
-
-@router.post("/recommendations/{recommendation_id}/marketing-draft")
-async def create_marketing_draft(
-    recommendation_id: UUID,
-    context: Annotated[TenantContext, Depends(get_tenant_context)],
-    session: Annotated[AsyncSession, Depends(get_db_session)],
-    settings: Annotated[Settings, Depends(get_app_settings)],
-) -> dict[str, Any]:
-    _require_operator(context)
-    try:
-        draft = await ApprovalService(session).create_marketing_draft(
-            tenant_id=context.tenant_id,
-            actor_id=context.actor_id,
-            recommendation_id=recommendation_id,
-            allow_before_approval=settings.allow_marketing_draft_before_approval,
-        )
-    except (ValueError, PermissionError) as error:
-        raise HTTPException(status_code=409, detail=str(error)) from error
-    return {"id": draft.id, "status": draft.status, "claims_to_verify": draft.claims_to_verify}
 
 
 @router.get("/marketing-drafts/{draft_id}")
