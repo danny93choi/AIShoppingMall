@@ -11,6 +11,9 @@ COPY apps ./apps
 COPY src ./src
 COPY fixtures ./fixtures
 COPY assets ./assets
+COPY prompts ./prompts
+COPY migrations ./migrations
+COPY alembic.ini ./alembic.ini
 RUN pip install --upgrade pip && pip install .
 
 RUN useradd --create-home --uid 10001 appuser

@@ -95,6 +95,9 @@ class SupplierCandidateModel(TenantOwnedMixin, AuditMixin, Base):
 
 class OpportunityScoreModel(TenantOwnedMixin, AuditMixin, Base):
     __tablename__ = "opportunity_scores"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "candidate_id", "version", name="uq_score_candidate_version"),
+    )
     candidate_id: Mapped[UUID]
     version: Mapped[str] = mapped_column(String(50))
     final_score: Mapped[Decimal] = mapped_column(Numeric(6, 3))
@@ -106,7 +109,10 @@ class OpportunityScoreModel(TenantOwnedMixin, AuditMixin, Base):
 
 class RecommendationModel(TenantOwnedMixin, AuditMixin, Base):
     __tablename__ = "recommendations"
-    __table_args__ = (Index("ix_recommendation_tenant_status", "tenant_id", "status"),)
+    __table_args__ = (
+        Index("ix_recommendation_tenant_status", "tenant_id", "status"),
+        UniqueConstraint("tenant_id", "score_id", name="uq_recommendation_score"),
+    )
     candidate_id: Mapped[UUID]
     score_id: Mapped[UUID]
     rank: Mapped[int]
@@ -136,6 +142,13 @@ class JobModel(TenantOwnedMixin, AuditMixin, Base):
     status: Mapped[str] = mapped_column(String(30))
     progress_percent: Mapped[int] = mapped_column(Integer, default=0)
     current_step: Mapped[str | None] = mapped_column(String(200))
+    completed_steps: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    warnings_json: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    errors_json: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, default=list)
+    summary_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class AgentRunModel(TenantOwnedMixin, AuditMixin, Base):
