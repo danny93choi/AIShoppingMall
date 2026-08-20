@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from apps.api.routers.admin import router as admin_router
 from apps.api.routers.health import router as health_router
 from apps.api.routers.integrations import router as integrations_router
+from apps.api.routers.pilot import router as pilot_router
 from apps.api.routers.recommendations import router as recommendations_router
 from apps.api.routers.trends import router as trends_router
 from commerce_agent.config.settings import get_settings
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
     application.include_router(integrations_router)
     application.include_router(trends_router)
     application.include_router(recommendations_router)
+    application.include_router(pilot_router)
     return application
 
 
