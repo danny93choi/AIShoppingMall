@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     shopify_shop_domain: str | None = None
     shopify_access_token: SecretStr | None = Field(default=None, repr=False)
     shopify_api_version: str = "2026-07"
+    naver_api_hub_client_id: SecretStr | None = Field(default=None, repr=False)
+    naver_api_hub_client_secret: SecretStr | None = Field(default=None, repr=False)
+    naver_api_hub_base_url: str = "https://naverapihub.apigw.ntruss.com"
+    naver_search_ad_api_key: SecretStr | None = Field(default=None, repr=False)
+    naver_search_ad_secret_key: SecretStr | None = Field(default=None, repr=False)
+    naver_search_ad_customer_id: str | None = Field(default=None, repr=False)
+    naver_search_ad_base_url: str = "https://api.searchad.naver.com"
 
 
 @lru_cache

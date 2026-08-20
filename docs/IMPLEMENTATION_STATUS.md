@@ -158,6 +158,20 @@ Phase 12 — Pilot Readiness (complete)
 | P12-02 | Typed tenant onboarding | PASS |
 | P12-03 | Conservative and growth scoring presets | PASS |
 | P12-04 | Dead-letter support/admin endpoint | PASS |
+
+## Phase 13: NAVER Korea Trend Integration
+
+| Item | Status |
+|---|---|
+| NAVER API HUB Shopping Insight adapter | PASS |
+| Secret-safe credential configuration | PASS |
+| Read-only live API smoke test | PASS |
+| Admin category/keyword trend controls | PASS |
+| Real-data provenance and weekly trend display | PASS |
+
+Live verification on 2026-08-20 returned five keyword series from NAVER API HUB. The admin
+workflow displayed `NAVER REAL` provenance and completed with five observations. Incomplete
+current-week data is excluded from week-over-week calculations.
 | P12-05 | Tenant cost and pilot KPI dashboard API | PASS |
 | P12-06 | Data retention policy | PASS |
 | P12-07 | Terms/compliance checklist | PASS |

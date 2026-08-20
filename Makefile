@@ -2,7 +2,7 @@ PYTHON ?= python3.12
 VENV := .venv
 BIN := $(VENV)/bin
 
-.PHONY: bootstrap lint format typecheck test migrate migrate-down dev down logs demo-discovery shopify-smoke
+.PHONY: bootstrap lint format typecheck test migrate migrate-down dev down logs demo-discovery shopify-smoke naver-trend-smoke
 
 bootstrap:
 	@$(PYTHON) -c 'import sys; assert sys.version_info >= (3, 12), "Python 3.12+ is required"'
@@ -50,3 +50,6 @@ demo-discovery:
 
 shopify-smoke:
 	docker compose run --build --rm api python -m apps.shopify_smoke
+
+naver-trend-smoke:
+	docker compose run --build --rm api python -m apps.naver_trend_smoke
