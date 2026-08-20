@@ -13,6 +13,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    event,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -131,6 +132,35 @@ class ApprovalModel(TenantOwnedMixin, AuditMixin, Base):
     decided_by: Mapped[UUID | None]
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     decision_note: Mapped[str | None] = mapped_column(Text)
+
+
+class AuditEventModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "audit_events"
+    __table_args__ = (
+        Index("ix_audit_tenant_resource", "tenant_id", "resource_type", "resource_id"),
+    )
+    event_type: Mapped[str] = mapped_column(String(100))
+    resource_type: Mapped[str] = mapped_column(String(100))
+    resource_id: Mapped[UUID]
+    actor_id: Mapped[UUID]
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+
+
+class MarketingDraftModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "marketing_drafts"
+    __table_args__ = (UniqueConstraint("tenant_id", "recommendation_id"),)
+    recommendation_id: Mapped[UUID]
+    schema_version: Mapped[str] = mapped_column(String(20))
+    content_json: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    claims_to_verify: Mapped[list[str]] = mapped_column(JSONB)
+    risks_json: Mapped[list[str]] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(String(30))
+
+
+@event.listens_for(AuditEventModel, "before_update")
+@event.listens_for(AuditEventModel, "before_delete")
+def _prevent_audit_mutation(*_args: Any) -> None:
+    raise ValueError("audit events are immutable")
 
 
 class JobModel(TenantOwnedMixin, AuditMixin, Base):

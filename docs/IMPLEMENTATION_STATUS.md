@@ -4,7 +4,7 @@ Authoritative specification: `AI_Commerce_Agent_Implementation_Spec.md`
 
 ## Current Phase
 
-Phase 7 — End-to-End Discovery Workflow (complete)
+Phase 8 — Approval and Marketing Draft (complete)
 
 ## Phase Status
 
@@ -98,6 +98,17 @@ Phase 7 — End-to-End Discovery Workflow (complete)
 | P7-06 | Stable ranking and idempotent recommendation service | PASS |
 | P7-07 | Persistent JSON run summary and score breakdown | PASS |
 | P7-08 | Tenant discovery schedule due-state model | PASS |
+
+## Phase 8 Status
+
+| Task | Description | Status |
+|---|---|---|
+| P8-01 | Approval decision domain and pending-only transitions | PASS |
+| P8-02 | Tenant-scoped approve/reject/defer API | PASS |
+| P8-03 | Immutable append-only audit events | PASS |
+| P8-04 | Deterministic MarketingAgent draft generator | PASS |
+| P8-05 | Claims-to-verify and risk output | PASS |
+| P8-06 | Configurable approval-gated draft and external mutation guard | PASS |
 
 ## Phase 0 Verification
 
@@ -203,3 +214,12 @@ The host system Python is 3.9.6, so local non-container commands require install
 - Ruff lint/format: PASS
 - mypy strict mode: PASS, 106 source files
 - pytest: PASS, 57 tests
+
+## Phase 8 Verification
+
+- Only pending recommendations can be decided: PASS
+- Marketing draft is blocked before approval by default: PASS
+- Draft output includes claims-to-verify and risks: PASS
+- External mutation guard requires approval: PASS
+- Audit events reject ORM update/delete operations: PASS
+- Ruff, mypy, migration, and focused integration test: PASS

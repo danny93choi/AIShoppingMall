@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     llm_max_retries: int = Field(default=2, ge=0, le=5)
     llm_run_budget_usd: float = Field(default=1.0, gt=0)
+    allow_marketing_draft_before_approval: bool = False
 
 
 @lru_cache
