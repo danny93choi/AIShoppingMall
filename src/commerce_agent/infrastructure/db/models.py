@@ -204,3 +204,21 @@ class ShopIntelligenceProfileModel(TenantOwnedMixin, AuditMixin, Base):
     inventory_turnover_by_category: Mapped[dict[str, Any]] = mapped_column(JSONB)
     seasonality_features: Mapped[dict[str, Any]] = mapped_column(JSONB)
     data_coverage: Mapped[Decimal] = mapped_column(Numeric(5, 4))
+
+
+class RawTrendObservationModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "raw_trend_observations"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "source", "source_id", name="uq_raw_trend_source_item"),
+        Index("ix_raw_trend_tenant_candidate", "tenant_id", "candidate_id"),
+    )
+    candidate_id: Mapped[UUID | None]
+    source: Mapped[str] = mapped_column(String(100))
+    source_id: Mapped[str] = mapped_column(String(300))
+    title_raw: Mapped[str] = mapped_column(Text)
+    url: Mapped[str] = mapped_column(Text)
+    price: Mapped[Decimal | None] = mapped_column(Numeric(18, 4))
+    currency: Mapped[str | None] = mapped_column(String(3))
+    observed_metrics: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    raw_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB)

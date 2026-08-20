@@ -1,0 +1,10 @@
+{
+  "repeat": 10,
+  "items": [
+    {"source_id":"a-tumbler","title":"Acme T600 600ml 보온 텀블러","url":"https://example.test/a/tumbler","price":"18000","currency":"KRW","observed_metrics":{"growth_7d":0.45},"observed_at":"2026-08-19T00:00:00Z","metadata":{"brand":"Acme","model":"T600","capacity_ml":600}},
+    {"source_id":"a-mug","title":"Mori C20 세라믹 머그컵","url":"https://example.test/a/mug","price":"12000","currency":"KRW","observed_metrics":{"growth_7d":0.22},"observed_at":"2026-08-19T00:00:00Z","metadata":{"brand":"Mori","model":"C20"}},
+    {"source_id":"a-towel","title":"Luma S1 코튼 타월","url":"https://example.test/a/towel","price":"9000","currency":"KRW","observed_metrics":{"growth_7d":0.18},"observed_at":"2026-08-19T00:00:00Z","metadata":{"brand":"Luma","model":"S1"}},
+    {"source_id":"a-lamp","title":"Novi L10 무선 테이블 램프","url":"https://example.test/a/lamp","price":"32000","currency":"KRW","observed_metrics":{"growth_7d":0.38},"observed_at":"2026-08-19T00:00:00Z","metadata":{"brand":"Novi","model":"L10"}},
+    {"source_id":"a-bag","title":"Pico B2 미니 크로스백","url":"https://example.test/a/bag","price":"28000","currency":"KRW","observed_metrics":{"growth_7d":0.31},"observed_at":"2026-08-19T00:00:00Z","metadata":{"brand":"Pico","model":"B2"}}
+  ]
+}

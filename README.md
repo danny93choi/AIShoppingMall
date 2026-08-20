@@ -28,6 +28,9 @@ API는 `http://localhost:8000`에서 실행됩니다.
 Phase 2에서는 `/api/v1/integrations/commerce` 아래에 fixture 기반 mock shop 연결 및 동기화
 API가 제공됩니다. API 계약은 `docs/API.md`를 참고하세요.
 
+Phase 3에서는 `/api/v1/trends/mock-ingest`로 100개의 fixture trend observation을 수집하고,
+정규화 및 중복 제거를 거쳐 다섯 개 canonical candidate로 병합할 수 있습니다.
+
 ## 구조와 의존성
 
 이 저장소는 API와 worker를 함께 배포 가능한 modular monolith로 유지합니다.
