@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 from statistics import fmean, pstdev
 from typing import Annotated, Any, Literal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -14,6 +14,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from apps.api.dependencies import get_db_session
 from apps.api.tenant import get_tenant_context
+from commerce_agent.application.agents.prompts import PromptRegistry
+from commerce_agent.application.agents.runner import AgentRunner
+from commerce_agent.application.agents.schemas import CandidateInput
+from commerce_agent.application.agents.specialists import (
+    AgentExecutionContext,
+    EvidenceItem,
+    MarketAnalystAgent,
+    MarketAnalystInput,
+)
+from commerce_agent.application.services.credential_settings import effective_tenant_settings
 from commerce_agent.application.tenant_context import TenantContext
 from commerce_agent.application.workflows.discovery import DiscoveryWorkflow
 from commerce_agent.config.settings import get_settings
@@ -21,6 +31,7 @@ from commerce_agent.domain.discovery.keyword_quality import (
     KeywordQualityAssessment,
     assess_keyword,
 )
+from commerce_agent.infrastructure.db.agent_runs import SqlAlchemyAgentRunStore
 from commerce_agent.infrastructure.db.models import (
     AgentRunModel,
     CommerceConnectionModel,
@@ -32,6 +43,14 @@ from commerce_agent.infrastructure.db.models import (
     RecommendationModel,
 )
 from commerce_agent.integrations.commerce.mock import MockCommerceAdapter
+from commerce_agent.integrations.llm.factory import (
+    configured_llm_providers,
+    create_model_router,
+)
+from commerce_agent.integrations.market_research.naver_shopping import (
+    NaverShoppingCredentials,
+    NaverShoppingResearch,
+)
 from commerce_agent.integrations.trend_sources.base import TrendQuery, TrendSource
 from commerce_agent.integrations.trend_sources.naver import (
     CATEGORY_NAMES,
@@ -44,6 +63,7 @@ from commerce_agent.integrations.trend_sources.naver_search_ad import (
     NaverSearchAdKeywordSource,
 )
 from commerce_agent.security.rbac import Permission, require_permission
+from commerce_agent.security.redaction import redact_sensitive
 
 ROOT = Path(__file__).resolve().parents[3]
 router = APIRouter(tags=["admin"])
@@ -63,19 +83,55 @@ AUTO_DISCOVERY_SEEDS = {
 
 AUTO_DISCOVERY_SUBCATEGORIES = {
     "50000000": [
-        "여성의류", "남성의류", "여성아우터", "남성아우터", "원피스", "여성상의",
-        "남성상의", "여성하의", "남성하의", "청바지", "트레이닝복", "언더웨어",
-        "잠옷", "아동의류", "스포츠의류",
+        "여성의류",
+        "남성의류",
+        "여성아우터",
+        "남성아우터",
+        "원피스",
+        "여성상의",
+        "남성상의",
+        "여성하의",
+        "남성하의",
+        "청바지",
+        "트레이닝복",
+        "언더웨어",
+        "잠옷",
+        "아동의류",
+        "스포츠의류",
     ],
     "50000001": [
-        "여성가방", "남성가방", "여성신발", "남성신발", "운동화", "지갑",
-        "벨트", "시계", "주얼리", "모자", "선글라스", "안경", "양말",
-        "우산", "여행가방", "패션소품",
+        "여성가방",
+        "남성가방",
+        "여성신발",
+        "남성신발",
+        "운동화",
+        "지갑",
+        "벨트",
+        "시계",
+        "주얼리",
+        "모자",
+        "선글라스",
+        "안경",
+        "양말",
+        "우산",
+        "여행가방",
+        "패션소품",
     ],
     "50000002": [
-        "스킨케어", "클렌징", "선케어", "마스크팩", "메이크업", "립메이크업",
-        "향수", "헤어케어", "헤어스타일링", "바디케어", "네일케어", "남성화장품",
-        "미용기기", "미용소품",
+        "스킨케어",
+        "클렌징",
+        "선케어",
+        "마스크팩",
+        "메이크업",
+        "립메이크업",
+        "향수",
+        "헤어케어",
+        "헤어스타일링",
+        "바디케어",
+        "네일케어",
+        "남성화장품",
+        "미용기기",
+        "미용소품",
     ],
     "50000003": [
         "생활가전",
@@ -83,28 +139,90 @@ AUTO_DISCOVERY_SUBCATEGORIES = {
         "계절가전",
         "컴퓨터주변기기",
         "모바일액세서리",
-        "음향기기", "영상가전", "카메라", "게임기", "노트북", "태블릿",
-        "스마트워치", "저장장치", "네트워크장비", "프린터",
+        "음향기기",
+        "영상가전",
+        "카메라",
+        "게임기",
+        "노트북",
+        "태블릿",
+        "스마트워치",
+        "저장장치",
+        "네트워크장비",
+        "프린터",
     ],
     "50000004": [
-        "침실가구", "거실가구", "주방가구", "학생가구", "사무용가구", "수납가구",
-        "아웃도어가구", "침구", "커튼", "카페트", "조명", "홈데코", "인테리어소품",
-        "DIY자재", "욕실인테리어",
+        "침실가구",
+        "거실가구",
+        "주방가구",
+        "학생가구",
+        "사무용가구",
+        "수납가구",
+        "아웃도어가구",
+        "침구",
+        "커튼",
+        "카페트",
+        "조명",
+        "홈데코",
+        "인테리어소품",
+        "DIY자재",
+        "욕실인테리어",
     ],
     "50000005": [
-        "유아동의류", "유아동신발", "유아식품", "분유", "기저귀", "물티슈",
-        "수유용품", "이유식용품", "유모차", "카시트", "아기띠", "유아가구",
-        "출산준비물", "목욕용품", "완구", "교구",
+        "유아동의류",
+        "유아동신발",
+        "유아식품",
+        "분유",
+        "기저귀",
+        "물티슈",
+        "수유용품",
+        "이유식용품",
+        "유모차",
+        "카시트",
+        "아기띠",
+        "유아가구",
+        "출산준비물",
+        "목욕용품",
+        "완구",
+        "교구",
     ],
     "50000006": [
-        "간편식", "건강식품", "다이어트식품", "음료", "커피", "차", "과자",
-        "베이커리", "농산물", "쌀", "축산물", "수산물", "냉동식품", "반찬",
-        "면류", "조미료", "유제품", "생수",
+        "간편식",
+        "건강식품",
+        "다이어트식품",
+        "음료",
+        "커피",
+        "차",
+        "과자",
+        "베이커리",
+        "농산물",
+        "쌀",
+        "축산물",
+        "수산물",
+        "냉동식품",
+        "반찬",
+        "면류",
+        "조미료",
+        "유제품",
+        "생수",
     ],
     "50000007": [
-        "홈트레이닝", "헬스", "요가", "캠핑", "등산", "골프", "자전거",
-        "수영", "낚시", "러닝", "테니스", "배드민턴", "축구", "농구",
-        "스키", "보드", "스포츠보호용품",
+        "홈트레이닝",
+        "헬스",
+        "요가",
+        "캠핑",
+        "등산",
+        "골프",
+        "자전거",
+        "수영",
+        "낚시",
+        "러닝",
+        "테니스",
+        "배드민턴",
+        "축구",
+        "농구",
+        "스키",
+        "보드",
+        "스포츠보호용품",
     ],
     "50000008": [
         "주방용품",
@@ -114,13 +232,34 @@ AUTO_DISCOVERY_SUBCATEGORIES = {
         "건강측정용품",
         "공구",
         "생활안전용품",
-        "계절생활용품", "세탁용품", "구강용품", "위생용품", "안마용품",
-        "건강관리용품", "의료용품", "원예용품", "보안용품", "생활잡화",
+        "계절생활용품",
+        "세탁용품",
+        "구강용품",
+        "위생용품",
+        "안마용품",
+        "건강관리용품",
+        "의료용품",
+        "원예용품",
+        "보안용품",
+        "생활잡화",
     ],
     "50000009": [
-        "강아지용품", "고양이용품", "반려동물식품", "자동차용품", "오토바이용품",
-        "문구", "사무용품", "악기", "취미공예", "수집품", "보드게임", "꽃",
-        "여행용품", "숙박", "공연티켓", "e쿠폰",
+        "강아지용품",
+        "고양이용품",
+        "반려동물식품",
+        "자동차용품",
+        "오토바이용품",
+        "문구",
+        "사무용품",
+        "악기",
+        "취미공예",
+        "수집품",
+        "보드게임",
+        "꽃",
+        "여행용품",
+        "숙박",
+        "공연티켓",
+        "e쿠폰",
     ],
 }
 
@@ -248,6 +387,66 @@ def _commercial_evidence(body: CommercialEvidenceRequest) -> dict[str, Any]:
     }
 
 
+def _market_agent_input(
+    candidate: ProductCandidateModel,
+    observation: RawTrendObservationModel,
+    keyword_stats: dict[str, Any] | None = None,
+) -> MarketAnalystInput:
+    trend_source_id = f"naver-shopping-insight:{observation.id}"
+    source_ids = [trend_source_id]
+    observations = [
+        EvidenceItem(
+            source_id=trend_source_id,
+            data={
+                "market": "naver",
+                "evidence_type": "search_demand_and_trend",
+                "observed_at": observation.observed_at.isoformat(),
+                "metrics": observation.observed_metrics,
+                "series": observation.raw_metadata.get("series", []),
+                "trend_analysis": _trend_analysis(observation.raw_metadata.get("series", [])),
+                "search_demand": keyword_stats,
+            },
+        )
+    ]
+    commercial = candidate.attributes_json.get("commercial_evidence")
+    if commercial:
+        commercial_source_id = f"operator-commercial-evidence:{candidate.id}"
+        source_ids.append(commercial_source_id)
+        observations.append(
+            EvidenceItem(
+                source_id=commercial_source_id,
+                data={
+                    "market": "operator_input",
+                    "evidence_type": "commercial_assumptions",
+                    **commercial,
+                },
+            )
+        )
+    market_price = candidate.attributes_json.get("market_price_evidence")
+    if market_price:
+        price_source_id = f"naver-shopping-search:{candidate.id}"
+        source_ids.append(price_source_id)
+        observations.append(
+            EvidenceItem(
+                source_id=price_source_id,
+                data={
+                    "market": "naver",
+                    "evidence_type": "live_product_and_price_distribution",
+                    **market_price,
+                },
+            )
+        )
+    return MarketAnalystInput(
+        candidate=CandidateInput(
+            canonical_name=candidate.canonical_name,
+            description=candidate.description,
+            observed_attributes=redact_sensitive(candidate.attributes_json),
+            source_observation_ids=source_ids,
+        ),
+        observations=observations,
+    )
+
+
 @router.get("/admin", include_in_schema=False)
 async def admin_page() -> FileResponse:
     return FileResponse(ROOT / "apps/api/static/admin.html")
@@ -260,6 +459,9 @@ async def admin_overview(
 ) -> dict[str, Any]:
     require_permission(context, Permission.VIEW)
     tenant_id = context.tenant_id
+    runtime_settings = await effective_tenant_settings(
+        session, tenant_id=tenant_id, base=get_settings()
+    )
     connections = list(
         (
             await session.scalars(
@@ -381,6 +583,8 @@ async def admin_overview(
                     "search_demand": keyword_stats.get(item.canonical_name),
                     "keyword_quality": quality_stats.get(item.canonical_name),
                     "commercial_evidence": item.attributes_json.get("commercial_evidence"),
+                    "market_price_evidence": item.attributes_json.get("market_price_evidence"),
+                    "ai_market_analysis": item.attributes_json.get("ai_market_analysis"),
                 },
             }
         )
@@ -446,10 +650,21 @@ async def admin_overview(
             )
             missing_evidence = ["실제 판매 성과"]
         else:
-            score = round(score * 0.7, 1)
-            verdict = "상업성 검증 필요"
-            reason = "트렌드는 확인됐지만 공급가와 판매가가 없어 판매 추천을 확정할 수 없습니다."
-            missing_evidence = ["공급가", "예상 판매가", "MOQ", "배송비", "경쟁가격"]
+            market_price = trend.get("market_price_evidence") or {}
+            if market_price.get("sample_size"):
+                score = round(score * 0.85 + min(market_price["sample_size"] / 100, 1) * 15, 1)
+                verdict = "소싱 조건 확인"
+                reason = (
+                    f"NAVER 상품 {market_price['sample_size']}개 기준 권장 판매가 "
+                    f"{market_price['recommended_sale_price']:,.0f}원 · 최대 공급가 "
+                    f"{market_price['maximum_supplier_cost']:,.0f}원"
+                )
+                missing_evidence = ["실제 공급처", "실제 공급가", "MOQ"]
+            else:
+                score = round(score * 0.7, 1)
+                verdict = "상업성 검증 필요"
+                reason = "실제 상품 가격 근거가 없어 판매 추천을 확정할 수 없습니다."
+                missing_evidence = ["시장가격", "공급가", "MOQ"]
         market_recommendations.append(
             {
                 "candidate_id": candidate_payload["id"],
@@ -461,6 +676,7 @@ async def admin_overview(
                 "latest_ratio": trend["latest_ratio"],
                 "search_demand": trend.get("search_demand"),
                 "commercial_evidence": commercial,
+                "market_price_evidence": trend.get("market_price_evidence"),
                 "missing_evidence": missing_evidence,
             }
         )
@@ -485,8 +701,14 @@ async def admin_overview(
         "candidates": real_candidates_payload,
         "market_recommendations": market_recommendations,
         "ai_agent": {
-            "enabled": bool(get_settings().openai_api_key),
-            "status": "분석 워크플로 미연결",
+            "enabled": runtime_settings.llm_provider in configured_llm_providers(runtime_settings),
+            "provider": runtime_settings.llm_provider,
+            "providers": configured_llm_providers(runtime_settings),
+            "status": (
+                "후보별 시장 판정 연결됨"
+                if runtime_settings.llm_provider in configured_llm_providers(runtime_settings)
+                else "LLM 공급자 또는 모델 게이트웨이 설정 필요"
+            ),
         },
         "discovery_quality": {
             "subcategory": latest_discovery.get("subcategory"),
@@ -583,6 +805,106 @@ async def save_commercial_evidence(
     return evidence
 
 
+@router.post("/api/v1/admin/candidates/{candidate_id}/market-agent-analysis")
+async def run_market_agent_analysis(
+    candidate_id: UUID,
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict[str, Any]:
+    """Run the evidence-grounded AI analyst for one real-data candidate."""
+    require_permission(context, Permission.RUN_DISCOVERY)
+    settings = await effective_tenant_settings(
+        session, tenant_id=context.tenant_id, base=get_settings()
+    )
+    if settings.llm_provider not in configured_llm_providers(settings):
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "AI 시장 판정에는 OPENAI_API_KEY 또는 OpenAI 호환 모델 게이트웨이 설정이 "
+                "필요합니다."
+            ),
+        )
+    candidate = await session.scalar(
+        select(ProductCandidateModel).where(
+            ProductCandidateModel.id == candidate_id,
+            ProductCandidateModel.tenant_id == context.tenant_id,
+        )
+    )
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="candidate not found")
+    observation = await session.scalar(
+        select(RawTrendObservationModel)
+        .where(
+            RawTrendObservationModel.tenant_id == context.tenant_id,
+            RawTrendObservationModel.candidate_id == candidate_id,
+        )
+        .order_by(RawTrendObservationModel.observed_at.desc())
+        .limit(1)
+    )
+    if observation is None or not observation.raw_metadata.get("real_data", False):
+        raise HTTPException(status_code=409, detail="실제 시장 관측 데이터가 먼저 필요합니다.")
+    latest_job = await session.scalar(
+        select(JobModel)
+        .where(JobModel.tenant_id == context.tenant_id)
+        .order_by(JobModel.updated_at.desc())
+        .limit(1)
+    )
+    keyword_stats = None
+    if latest_job is not None:
+        keyword_stats = next(
+            (
+                item
+                for item in latest_job.summary_json.get("keyword_candidates", [])
+                if item.get("keyword") == candidate.canonical_name
+            ),
+            None,
+        )
+    agent_input = _market_agent_input(candidate, observation, keyword_stats)
+    runner = AgentRunner(
+        client=create_model_router(settings),
+        prompts=PromptRegistry(ROOT / "prompts"),
+        store=SqlAlchemyAgentRunStore(session),
+    )
+    try:
+        output = await MarketAnalystAgent(runner).analyze(
+            AgentExecutionContext(
+                tenant_id=context.tenant_id,
+                correlation_id=uuid4(),
+                model=settings.llm_default_model,
+                provider=settings.llm_provider,
+                maximum_cost_usd=Decimal(str(settings.llm_run_budget_usd)),
+            ),
+            agent_input,
+        )
+    except Exception as error:
+        raise HTTPException(
+            status_code=502,
+            detail=f"AI 시장 판정 실패: {type(error).__name__}",
+        ) from error
+    source_markets = sorted(
+        {
+            str(item.data.get("market"))
+            for item in agent_input.observations
+            if item.data.get("market") != "operator_input"
+        }
+    )
+    required_markets = ["naver", "coupang", "11st", "gmarket"]
+    analysis_payload = {
+        **output.model_dump(mode="json"),
+        "source_markets": source_markets,
+        "missing_markets": [market for market in required_markets if market not in source_markets],
+        "source_count": len(agent_input.observations),
+        "analyzed_at": datetime.now(UTC).isoformat(),
+    }
+    candidate.attributes_json = {
+        **candidate.attributes_json,
+        "ai_market_analysis": analysis_payload,
+    }
+    candidate.updated_at = datetime.now(UTC)
+    await session.flush()
+    return analysis_payload
+
+
 @router.post("/api/v1/admin/discovery")
 async def run_admin_discovery(
     context: Annotated[TenantContext, Depends(get_tenant_context)],
@@ -598,7 +920,9 @@ async def run_admin_discovery(
     if connection is None:
         raise HTTPException(status_code=409, detail="connect a shop before discovery")
     request = body or AdminDiscoveryRequest()
-    settings = get_settings()
+    settings = await effective_tenant_settings(
+        session, tenant_id=context.tenant_id, base=get_settings()
+    )
     if request.subcategory and request.subcategory not in AUTO_DISCOVERY_SUBCATEGORIES.get(
         request.category_code, []
     ):
@@ -740,6 +1064,48 @@ async def run_admin_discovery(
     finally:
         if naver_source is not None:
             await naver_source.close()
+    researched_keywords: list[str] = []
+    research_errors: list[str] = []
+    if settings.naver_search_client_id and settings.naver_search_client_secret:
+        shopping_research = NaverShoppingResearch(
+            NaverShoppingCredentials(
+                client_id=settings.naver_search_client_id,
+                client_secret=settings.naver_search_client_secret,
+                base_url=settings.naver_search_base_url,
+            )
+        )
+        try:
+            research_results = await asyncio.gather(
+                *(shopping_research.research(keyword) for keyword in selected_keywords),
+                return_exceptions=True,
+            )
+        finally:
+            await shopping_research.close()
+        candidates = list(
+            (
+                await session.scalars(
+                    select(ProductCandidateModel).where(
+                        ProductCandidateModel.tenant_id == context.tenant_id,
+                        ProductCandidateModel.canonical_name.in_(selected_keywords),
+                    )
+                )
+            ).all()
+        )
+        by_name = {candidate.canonical_name: candidate for candidate in candidates}
+        for keyword, result in zip(selected_keywords, research_results, strict=True):
+            if isinstance(result, BaseException):
+                research_errors.append(f"{keyword}: {type(result).__name__}")
+                continue
+            product_candidate = by_name.get(keyword)
+            if product_candidate is None:
+                continue
+            product_candidate.attributes_json = {
+                **product_candidate.attributes_json,
+                "market_price_evidence": result,
+            }
+            product_candidate.updated_at = datetime.now(UTC)
+            researched_keywords.append(keyword)
+        await session.flush()
     job = await session.get(JobModel, summary.job_id)
     discovery_metadata = {
         "discovery_mode": request.mode,
@@ -751,6 +1117,8 @@ async def run_admin_discovery(
             item.model_dump() for item in keyword_assessments if item.status != "eligible"
         ],
         "refinement_seeds": refinement_seeds,
+        "market_researched_keywords": researched_keywords,
+        "market_research_errors": research_errors,
     }
     if job is not None:
         job.summary_json = {**job.summary_json, **discovery_metadata}

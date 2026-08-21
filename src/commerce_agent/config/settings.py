@@ -23,10 +23,19 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
     readiness_timeout_seconds: float = Field(default=2.0, gt=0, le=30)
     openai_api_key: str | None = Field(default=None, repr=False)
+    anthropic_api_key: SecretStr | None = Field(default=None, repr=False)
+    anthropic_base_url: str = "https://api.anthropic.com/v1"
+    gemini_api_key: SecretStr | None = Field(default=None, repr=False)
+    gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
+    llm_provider: str = "openai"
     llm_default_model: str = "gpt-5.6-sol"
+    llm_fallback_provider: str | None = None
+    llm_gateway_base_url: str | None = None
+    llm_gateway_api_key: SecretStr | None = Field(default=None, repr=False)
     llm_timeout_seconds: float = Field(default=30.0, gt=0, le=300)
     llm_max_retries: int = Field(default=2, ge=0, le=5)
     llm_run_budget_usd: float = Field(default=1.0, gt=0)
+    settings_master_key: SecretStr | None = Field(default=None, repr=False)
     allow_marketing_draft_before_approval: bool = False
     shopify_shop_domain: str | None = None
     shopify_access_token: SecretStr | None = Field(default=None, repr=False)
@@ -34,6 +43,9 @@ class Settings(BaseSettings):
     naver_api_hub_client_id: SecretStr | None = Field(default=None, repr=False)
     naver_api_hub_client_secret: SecretStr | None = Field(default=None, repr=False)
     naver_api_hub_base_url: str = "https://naverapihub.apigw.ntruss.com"
+    naver_search_client_id: SecretStr | None = Field(default=None, repr=False)
+    naver_search_client_secret: SecretStr | None = Field(default=None, repr=False)
+    naver_search_base_url: str = "https://openapi.naver.com"
     naver_search_ad_api_key: SecretStr | None = Field(default=None, repr=False)
     naver_search_ad_secret_key: SecretStr | None = Field(default=None, repr=False)
     naver_search_ad_customer_id: str | None = Field(default=None, repr=False)

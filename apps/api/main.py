@@ -8,6 +8,7 @@ from apps.api.routers.health import router as health_router
 from apps.api.routers.integrations import router as integrations_router
 from apps.api.routers.pilot import router as pilot_router
 from apps.api.routers.recommendations import router as recommendations_router
+from apps.api.routers.settings import router as settings_router
 from apps.api.routers.trends import router as trends_router
 from commerce_agent.config.settings import get_settings
 from commerce_agent.infrastructure.cache.health import RedisHealthChecker
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
     application.include_router(trends_router)
     application.include_router(recommendations_router)
     application.include_router(pilot_router)
+    application.include_router(settings_router)
     return application
 
 

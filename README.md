@@ -49,6 +49,29 @@ NAVER_SEARCH_AD_CUSTOMER_ID=
 있습니다. `NAVER REAL` 표시는 API HUB에서 수집한 실제 데이터라는 의미입니다.
 트렌드 지수는 절대 검색량이 아닌 선택 기간 내 상대적 클릭 비율입니다.
 
+## AI 모델 공급자
+
+Agent는 특정 SDK에 직접 의존하지 않고 `ModelRouter`를 통해 모델을 선택합니다. 관리자 설정
+화면에서 OpenAI, Anthropic Claude 또는 Google Gemini를 선택하고 해당 회사의 API 키와 모델을
+설정할 수 있습니다.
+
+```env
+LLM_PROVIDER=openai
+LLM_DEFAULT_MODEL=gpt-5.6-sol
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
+GEMINI_API_KEY=
+```
+
+모델 Gateway 지원은 운영 인프라용 고급 환경 설정으로 유지하며 일반 설정 화면에는 노출하지
+않습니다. MCP는 모델 선택이 아니라 NAVER·Coupang·11번가·Gmarket 같은 조사 도구 연결에
+사용합니다.
+
+관리자 화면의 `설정` 버튼에서 모델 및 NAVER 자격증명을 Tenant별로 저장할 수 있습니다.
+저장값은 인증 암호화되어 DB에 보관되며 API 응답에는 마스킹된 값만 반환됩니다. 최초 한 번은
+서버 환경에 32자 이상의 무작위 `SETTINGS_MASTER_KEY`를 설정해야 합니다. 이 최상위 키는 설정
+화면이나 DB에 저장하지 않습니다.
+
 
 ## 구조와 의존성
 

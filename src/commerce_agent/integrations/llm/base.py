@@ -24,6 +24,7 @@ class LLMRequest:
     output_schema: type[BaseModel]
     temperature: float = 0.0
     metadata: dict[str, Any] = field(default_factory=dict)
+    provider: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

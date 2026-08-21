@@ -42,6 +42,17 @@ class CommerceConnectionModel(TenantOwnedMixin, AuditMixin, Base):
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
 
 
+class TenantCredentialModel(TenantOwnedMixin, AuditMixin, Base):
+    __tablename__ = "tenant_credentials"
+    __table_args__ = (UniqueConstraint("tenant_id", "provider"),)
+    provider: Mapped[str] = mapped_column(String(50))
+    encrypted_payload: Mapped[str] = mapped_column(Text)
+    masked_json: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    status: Mapped[str] = mapped_column(String(30), default="configured")
+    last_tested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str | None] = mapped_column(Text)
+
+
 class ProductCandidateModel(TenantOwnedMixin, AuditMixin, Base):
     __tablename__ = "product_candidates"
     __table_args__ = (

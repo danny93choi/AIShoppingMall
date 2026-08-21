@@ -189,6 +189,18 @@ NAVER Shopping Search was retired on 2026-07-31 without a replacement API. Phase
 uses supported Search Ad and Shopping Insight data for discovery, then requires operator-supplied
 commercial evidence before a trend candidate can receive a sales-readiness verdict.
 
+## Phase 15: AI Runtime and Secure Settings
+
+| Item | Status |
+|---|---|
+| Provider-neutral ModelRouter with fallback | PASS |
+| OpenAI direct and OpenAI-compatible gateway configuration | PASS |
+| Tenant-scoped encrypted credential storage | PASS |
+| Masked credential API with replace/delete audit trail | PASS |
+| Admin settings screen for AI and NAVER credentials | PASS |
+| Connection status and test actions | PASS |
+| Runtime credential injection into AI and NAVER workflows | PASS |
+
 | P12-05 | Tenant cost and pilot KPI dashboard API | PASS |
 | P12-06 | Data retention policy | PASS |
 | P12-07 | Terms/compliance checklist | PASS |

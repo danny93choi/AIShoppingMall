@@ -55,6 +55,7 @@ class AgentExecutionContext:
     tenant_id: UUID
     correlation_id: UUID
     model: str
+    provider: str | None = None
     maximum_cost_usd: Decimal = Decimal("1")
 
 
@@ -85,6 +86,7 @@ class _SpecialistAgent:
                 prompt_name=self.prompt_name,
                 prompt_version=self.prompt_version,
                 model=context.model,
+                provider=context.provider,
                 input={"input_json": agent_input.model_dump_json()},
                 output_schema=self.output_schema,
                 maximum_cost_usd=context.maximum_cost_usd,

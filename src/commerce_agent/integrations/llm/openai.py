@@ -26,6 +26,8 @@ class OpenAILLMClient(LLMClient):
         self,
         *,
         api_key: str | None,
+        base_url: str | None = None,
+        provider_name: str = "openai",
         timeout_seconds: float = 30.0,
         max_retries: int = 2,
         redact: RedactionHook = _identity,
@@ -35,8 +37,12 @@ class OpenAILLMClient(LLMClient):
         if client is None and not api_key:
             raise LLMConfigurationError("OPENAI_API_KEY is required for the OpenAI provider")
         self._client = client or AsyncOpenAI(
-            api_key=api_key, timeout=timeout_seconds, max_retries=max_retries
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout_seconds,
+            max_retries=max_retries,
         )
+        self._provider_name = provider_name
         self._redact = redact
         self._estimate_cost = estimate_cost
 
@@ -64,7 +70,7 @@ class OpenAILLMClient(LLMClient):
                 output_tokens=output_tokens,
                 estimated_cost_usd=self._estimate_cost(model_name, input_tokens, output_tokens),
             ),
-            provider="openai",
+            provider=self._provider_name,
             model=model_name,
             trace_id=response.id,
         )

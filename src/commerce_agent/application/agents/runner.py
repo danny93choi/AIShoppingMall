@@ -25,6 +25,7 @@ class AgentRequest:
     model: str
     input: dict[str, Any]
     output_schema: type[BaseModel]
+    provider: str | None = None
     maximum_cost_usd: Decimal = Decimal("1")
 
 
@@ -79,6 +80,7 @@ class AgentRunner:
                             user_prompt=current_user_prompt,
                             output_schema=request.output_schema,
                             metadata={"agent_run_id": str(record.id)},
+                            provider=request.provider,
                         )
                     )
                     total_usage = _add_usage(total_usage, response.usage)
