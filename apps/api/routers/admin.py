@@ -1,4 +1,6 @@
+import asyncio
 from datetime import UTC, datetime
+from decimal import Decimal
 from pathlib import Path
 from statistics import fmean, pstdev
 from typing import Annotated, Any, Literal
@@ -15,6 +17,10 @@ from apps.api.tenant import get_tenant_context
 from commerce_agent.application.tenant_context import TenantContext
 from commerce_agent.application.workflows.discovery import DiscoveryWorkflow
 from commerce_agent.config.settings import get_settings
+from commerce_agent.domain.discovery.keyword_quality import (
+    KeywordQualityAssessment,
+    assess_keyword,
+)
 from commerce_agent.infrastructure.db.models import (
     AgentRunModel,
     CommerceConnectionModel,
@@ -53,6 +59,69 @@ AUTO_DISCOVERY_SEEDS = {
     "50000007": "운동용품",
     "50000008": "생활용품",
     "50000009": "취미용품",
+}
+
+AUTO_DISCOVERY_SUBCATEGORIES = {
+    "50000000": [
+        "여성의류", "남성의류", "여성아우터", "남성아우터", "원피스", "여성상의",
+        "남성상의", "여성하의", "남성하의", "청바지", "트레이닝복", "언더웨어",
+        "잠옷", "아동의류", "스포츠의류",
+    ],
+    "50000001": [
+        "여성가방", "남성가방", "여성신발", "남성신발", "운동화", "지갑",
+        "벨트", "시계", "주얼리", "모자", "선글라스", "안경", "양말",
+        "우산", "여행가방", "패션소품",
+    ],
+    "50000002": [
+        "스킨케어", "클렌징", "선케어", "마스크팩", "메이크업", "립메이크업",
+        "향수", "헤어케어", "헤어스타일링", "바디케어", "네일케어", "남성화장품",
+        "미용기기", "미용소품",
+    ],
+    "50000003": [
+        "생활가전",
+        "주방가전",
+        "계절가전",
+        "컴퓨터주변기기",
+        "모바일액세서리",
+        "음향기기", "영상가전", "카메라", "게임기", "노트북", "태블릿",
+        "스마트워치", "저장장치", "네트워크장비", "프린터",
+    ],
+    "50000004": [
+        "침실가구", "거실가구", "주방가구", "학생가구", "사무용가구", "수납가구",
+        "아웃도어가구", "침구", "커튼", "카페트", "조명", "홈데코", "인테리어소품",
+        "DIY자재", "욕실인테리어",
+    ],
+    "50000005": [
+        "유아동의류", "유아동신발", "유아식품", "분유", "기저귀", "물티슈",
+        "수유용품", "이유식용품", "유모차", "카시트", "아기띠", "유아가구",
+        "출산준비물", "목욕용품", "완구", "교구",
+    ],
+    "50000006": [
+        "간편식", "건강식품", "다이어트식품", "음료", "커피", "차", "과자",
+        "베이커리", "농산물", "쌀", "축산물", "수산물", "냉동식품", "반찬",
+        "면류", "조미료", "유제품", "생수",
+    ],
+    "50000007": [
+        "홈트레이닝", "헬스", "요가", "캠핑", "등산", "골프", "자전거",
+        "수영", "낚시", "러닝", "테니스", "배드민턴", "축구", "농구",
+        "스키", "보드", "스포츠보호용품",
+    ],
+    "50000008": [
+        "주방용품",
+        "수납정리용품",
+        "청소용품",
+        "욕실용품",
+        "건강측정용품",
+        "공구",
+        "생활안전용품",
+        "계절생활용품", "세탁용품", "구강용품", "위생용품", "안마용품",
+        "건강관리용품", "의료용품", "원예용품", "보안용품", "생활잡화",
+    ],
+    "50000009": [
+        "강아지용품", "고양이용품", "반려동물식품", "자동차용품", "오토바이용품",
+        "문구", "사무용품", "악기", "취미공예", "수집품", "보드게임", "꽃",
+        "여행용품", "숙박", "공연티켓", "e쿠폰",
+    ],
 }
 
 
@@ -132,10 +201,51 @@ class AdminDiscoveryRequest(BaseModel):
     source: Literal["naver"] = "naver"
     mode: Literal["auto", "direct"] = "auto"
     category_code: str = Field(default="50000008", pattern=r"^\d{8}$")
+    subcategory: str | None = Field(default=None, min_length=1, max_length=50)
     keywords: list[str] = Field(default_factory=list, max_length=20)
     exclude_terms: list[str] = Field(default_factory=list, max_length=20)
     minimum_monthly_searches: int = Field(default=1000, ge=10, le=10_000_000)
     window_days: int = Field(default=365, ge=7, le=365)
+
+
+class CommercialEvidenceRequest(BaseModel):
+    supplier_name: str = Field(min_length=1, max_length=100)
+    supplier_cost: Decimal = Field(ge=0)
+    expected_sale_price: Decimal = Field(gt=0)
+    shipping_per_unit: Decimal = Field(default=Decimal("0"), ge=0)
+    minimum_order_quantity: int = Field(default=1, ge=1, le=1_000_000)
+    competitor_price: Decimal | None = Field(default=None, gt=0)
+    marketplace_fee_rate: Decimal = Field(default=Decimal("0.12"), ge=0, le=0.5)
+    ad_cost_rate: Decimal = Field(default=Decimal("0.05"), ge=0, le=0.5)
+
+
+def _commercial_evidence(body: CommercialEvidenceRequest) -> dict[str, Any]:
+    landed_cost = body.supplier_cost + body.shipping_per_unit
+    variable_rate = body.marketplace_fee_rate + body.ad_cost_rate
+    fee_cost = body.expected_sale_price * variable_rate
+    expected_profit = body.expected_sale_price - landed_cost - fee_cost
+    expected_margin_rate = expected_profit / body.expected_sale_price
+    break_even_price = landed_cost / max(Decimal("1") - variable_rate, Decimal("0.01"))
+    price_risk = bool(
+        body.competitor_price and body.expected_sale_price > body.competitor_price * Decimal("1.1")
+    )
+    if expected_margin_rate >= Decimal("0.25") and not price_risk:
+        verdict = "판매 검토 가능"
+    elif expected_margin_rate >= Decimal("0.15") and not price_risk:
+        verdict = "마진 보완 필요"
+    else:
+        verdict = "판매 보류"
+    return {
+        **body.model_dump(mode="json"),
+        "landed_cost": float(round(landed_cost, 2)),
+        "fee_cost": float(round(fee_cost, 2)),
+        "expected_profit": float(round(expected_profit, 2)),
+        "expected_margin_rate": float(round(expected_margin_rate, 4)),
+        "break_even_price": float(round(break_even_price, 2)),
+        "price_risk": price_risk,
+        "verdict": verdict,
+        "updated_at": datetime.now(UTC).isoformat(),
+    }
 
 
 @router.get("/admin", include_in_schema=False)
@@ -242,6 +352,9 @@ async def admin_overview(
     keyword_stats = {
         item["keyword"]: item for item in latest_discovery.get("keyword_candidates", [])
     }
+    quality_stats = {
+        item["keyword"]: item for item in latest_discovery.get("keyword_assessments", [])
+    }
     real_candidates_payload: list[dict[str, Any]] = []
     for item in candidates:
         if item.id not in real_candidate_ids or (
@@ -266,6 +379,8 @@ async def admin_overview(
                     "real_data": True,
                     "analysis": _trend_analysis(series),
                     "search_demand": keyword_stats.get(item.canonical_name),
+                    "keyword_quality": quality_stats.get(item.canonical_name),
+                    "commercial_evidence": item.attributes_json.get("commercial_evidence"),
                 },
             }
         )
@@ -320,6 +435,21 @@ async def admin_overview(
         else:
             verdict = "보류"
             reason = "최근 흐름이 하락하여 즉시 소싱하기에는 근거가 약합니다."
+        commercial = trend.get("commercial_evidence")
+        if commercial:
+            margin_rate = float(commercial.get("expected_margin_rate", 0))
+            score = round(score * 0.8 + max(0.0, min(margin_rate / 0.3, 1.0)) * 20, 1)
+            verdict = str(commercial.get("verdict", "상업성 검토"))
+            reason = (
+                f"예상 마진 {margin_rate * 100:.1f}% · "
+                f"개당 예상이익 {float(commercial.get('expected_profit', 0)):,.0f}원"
+            )
+            missing_evidence = ["실제 판매 성과"]
+        else:
+            score = round(score * 0.7, 1)
+            verdict = "상업성 검증 필요"
+            reason = "트렌드는 확인됐지만 공급가와 판매가가 없어 판매 추천을 확정할 수 없습니다."
+            missing_evidence = ["공급가", "예상 판매가", "MOQ", "배송비", "경쟁가격"]
         market_recommendations.append(
             {
                 "candidate_id": candidate_payload["id"],
@@ -330,7 +460,8 @@ async def admin_overview(
                 "metrics": analysis,
                 "latest_ratio": trend["latest_ratio"],
                 "search_demand": trend.get("search_demand"),
-                "missing_evidence": ["실제 판매가격", "경쟁상품 수", "공급원가", "예상 마진"],
+                "commercial_evidence": commercial,
+                "missing_evidence": missing_evidence,
             }
         )
     market_recommendations.sort(
@@ -338,6 +469,7 @@ async def admin_overview(
     )
     for rank, recommendation in enumerate(market_recommendations, start=1):
         recommendation["rank"] = rank
+    observed_keyword_names = {item["name"] for item in real_candidates_payload}
     return {
         "connections": [
             {
@@ -355,6 +487,13 @@ async def admin_overview(
         "ai_agent": {
             "enabled": bool(get_settings().openai_api_key),
             "status": "분석 워크플로 미연결",
+        },
+        "discovery_quality": {
+            "subcategory": latest_discovery.get("subcategory"),
+            "assessments": latest_discovery.get("keyword_assessments", []),
+            "excluded": latest_discovery.get("excluded_keywords", []),
+            "refinement_seeds": latest_discovery.get("refinement_seeds", []),
+            "missing_trend_keywords": sorted(latest_keywords - observed_keyword_names),
         },
         "recommendations": [
             {
@@ -418,6 +557,32 @@ async def admin_overview(
     }
 
 
+@router.put("/api/v1/admin/candidates/{candidate_id}/commercial-evidence")
+async def save_commercial_evidence(
+    candidate_id: UUID,
+    body: CommercialEvidenceRequest,
+    context: Annotated[TenantContext, Depends(get_tenant_context)],
+    session: Annotated[AsyncSession, Depends(get_db_session)],
+) -> dict[str, Any]:
+    require_permission(context, Permission.RUN_DISCOVERY)
+    candidate = await session.scalar(
+        select(ProductCandidateModel).where(
+            ProductCandidateModel.id == candidate_id,
+            ProductCandidateModel.tenant_id == context.tenant_id,
+        )
+    )
+    if candidate is None:
+        raise HTTPException(status_code=404, detail="candidate not found")
+    evidence = _commercial_evidence(body)
+    candidate.attributes_json = {
+        **candidate.attributes_json,
+        "commercial_evidence": evidence,
+    }
+    candidate.updated_at = datetime.now(UTC)
+    await session.flush()
+    return evidence
+
+
 @router.post("/api/v1/admin/discovery")
 async def run_admin_discovery(
     context: Annotated[TenantContext, Depends(get_tenant_context)],
@@ -434,8 +599,17 @@ async def run_admin_discovery(
         raise HTTPException(status_code=409, detail="connect a shop before discovery")
     request = body or AdminDiscoveryRequest()
     settings = get_settings()
+    if request.subcategory and request.subcategory not in AUTO_DISCOVERY_SUBCATEGORIES.get(
+        request.category_code, []
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail="선택한 대분류에 포함되지 않는 세부 상품군입니다.",
+        )
     selected_keywords = request.keywords
     keyword_candidates: list[KeywordCandidate] = []
+    keyword_assessments: list[KeywordQualityAssessment] = []
+    refinement_seeds: list[str] = []
     search_ad_source: NaverSearchAdKeywordSource | None = None
     if request.mode == "auto":
         if (
@@ -461,7 +635,8 @@ async def run_admin_discovery(
         )
         try:
             keyword_candidates = await search_ad_source.discover(
-                AUTO_DISCOVERY_SEEDS.get(
+                request.subcategory
+                or AUTO_DISCOVERY_SEEDS.get(
                     request.category_code,
                     CATEGORY_NAMES.get(request.category_code, "쇼핑"),
                 ),
@@ -469,15 +644,57 @@ async def run_admin_discovery(
                 exclude_terms=request.exclude_terms,
                 limit=100,
             )
+            initial_assessments = [assess_keyword(item) for item in keyword_candidates]
+            initial_by_keyword = {item.keyword: item for item in keyword_candidates}
+            refinement_seeds = [
+                item.keyword
+                for item in sorted(
+                    initial_assessments,
+                    key=lambda item: (
+                        -initial_by_keyword[item.keyword].monthly_searches,
+                        item.keyword,
+                    ),
+                )
+                if item.status == "refine"
+            ][:3]
+            expanded_groups = await asyncio.gather(
+                *(
+                    search_ad_source.discover(
+                        seed,
+                        minimum_monthly_searches=request.minimum_monthly_searches,
+                        exclude_terms=request.exclude_terms,
+                        limit=40,
+                    )
+                    for seed in refinement_seeds
+                ),
+                return_exceptions=True,
+            )
+            candidates_by_keyword = {item.keyword: item for item in keyword_candidates}
+            for expanded in expanded_groups:
+                if isinstance(expanded, BaseException):
+                    continue
+                for candidate in expanded:
+                    existing = candidates_by_keyword.get(candidate.keyword)
+                    if existing is None or candidate.monthly_searches > existing.monthly_searches:
+                        candidates_by_keyword[candidate.keyword] = candidate
+            keyword_candidates = list(candidates_by_keyword.values())
         finally:
             await search_ad_source.close()
-        purchase_intent_candidates = [
-            item
-            for item in keyword_candidates
-            if item.estimated_click_rate >= 0.0035
-            and not item.keyword.endswith(("샵", "사이트", "쇼핑몰"))
-        ]
-        selected_keywords = [item.keyword for item in purchase_intent_candidates[:20]]
+        keyword_assessments = [assess_keyword(item) for item in keyword_candidates]
+        assessment_by_keyword = {item.keyword: item for item in keyword_assessments}
+        eligible_candidates = sorted(
+            (
+                item
+                for item in keyword_candidates
+                if assessment_by_keyword[item.keyword].status == "eligible"
+            ),
+            key=lambda item: (
+                -assessment_by_keyword[item.keyword].quality_score,
+                -item.monthly_searches,
+                item.keyword,
+            ),
+        )
+        selected_keywords = [item.keyword for item in eligible_candidates[:20]]
         if not selected_keywords:
             raise HTTPException(
                 status_code=422,
@@ -526,8 +743,14 @@ async def run_admin_discovery(
     job = await session.get(JobModel, summary.job_id)
     discovery_metadata = {
         "discovery_mode": request.mode,
+        "subcategory": request.subcategory,
         "selected_keywords": selected_keywords,
         "keyword_candidates": [item.model_dump() for item in keyword_candidates],
+        "keyword_assessments": [item.model_dump() for item in keyword_assessments],
+        "excluded_keywords": [
+            item.model_dump() for item in keyword_assessments if item.status != "eligible"
+        ],
+        "refinement_seeds": refinement_seeds,
     }
     if job is not None:
         job.summary_json = {**job.summary_json, **discovery_metadata}

@@ -172,6 +172,23 @@ Phase 12 — Pilot Readiness (complete)
 Live verification on 2026-08-20 returned five keyword series from NAVER API HUB. The admin
 workflow displayed `NAVER REAL` provenance and completed with five observations. Incomplete
 current-week data is excluded from week-over-week calculations.
+
+## Phase 14: Product Discovery Quality
+
+| Item | Status |
+|---|---|
+| Keyword specificity and purchase-intent assessment | PASS |
+| Dependent top-level and detailed product-group selection | PASS |
+| Explicit eligible/refine/exclude decision reasons | PASS |
+| Broad and navigation keyword suppression | PASS |
+| Manual supplier, cost, MOQ, shipping, and competitor evidence | PASS |
+| Expected margin, unit profit, and break-even calculation | PASS |
+| Admin quality-review and exclusion display | PASS |
+
+NAVER Shopping Search was retired on 2026-07-31 without a replacement API. Phase 14 therefore
+uses supported Search Ad and Shopping Insight data for discovery, then requires operator-supplied
+commercial evidence before a trend candidate can receive a sales-readiness verdict.
+
 | P12-05 | Tenant cost and pilot KPI dashboard API | PASS |
 | P12-06 | Data retention policy | PASS |
 | P12-07 | Terms/compliance checklist | PASS |

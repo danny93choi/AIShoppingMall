@@ -39,12 +39,16 @@ NAVER Cloud Platform의 NAVER API HUB에서 발급한 인증 정보를 `.env`에
 ```env
 NAVER_API_HUB_CLIENT_ID=
 NAVER_API_HUB_CLIENT_SECRET=
+NAVER_SEARCH_AD_API_KEY=
+NAVER_SEARCH_AD_SECRET_KEY=
+NAVER_SEARCH_AD_CUSTOMER_ID=
 ```
 
 연결만 확인하는 읽기 전용 smoke test는 `make naver-trend-smoke`로 실행합니다. 관리자 화면
-`http://localhost:8000/admin`에서는 쇼핑 분야와 키워드 최대 5개를 선택한 뒤 `한국 트렌드
-조사`를 누릅니다. `NAVER REAL` 표시는 API HUB에서 수집한 실제 데이터라는 의미입니다.
+`http://localhost:8000/admin`에서는 자동 발굴 또는 키워드 최대 20개 직접 비교를 실행할 수
+있습니다. `NAVER REAL` 표시는 API HUB에서 수집한 실제 데이터라는 의미입니다.
 트렌드 지수는 절대 검색량이 아닌 선택 기간 내 상대적 클릭 비율입니다.
+
 
 ## 구조와 의존성
 
